@@ -1,0 +1,314 @@
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2017 Lars Kroll <bathtor@googlemail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ */
+
+package com.larskroll.roll20.sheet
+
+import scalajs.js;
+import com.larskroll.roll20.facade.Roll20;
+import js.annotation._
+import scala.scalajs.js.Dynamic.{ global => dynGlobal, literal => dynLiteral }
+import scala.concurrent.{ Future, Promise, ExecutionContext }
+import collection.mutable
+import scala.util.{ Success, Failure }
+
+case class SheetWorkerAPIException(msg: String) extends Throwable {
+  override def getMessage(): String = s"SheetWorkerAPIException($msg)";
+}
+
+@JSExportDescendentObjects
+trait SheetWorker {
+  import js.JSConverters._
+  //import scala.concurrent.ExecutionContext.Implicits.global
+  //import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow;
+
+  implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.runNow;
+
+  val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]] with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
+
+  @JSExport
+  def load() {
+    subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
+      {
+        val (k, callbacks) = t;
+        val f = (e: Roll20.EventInfo) => {
+          callbacks.foreach { c => c(e) }
+        }
+        log(s"DEBUG: Subscribing sheetworker on trigger: ${k}.");
+        Roll20.on(k, f);
+      }
+    }
+  }
+
+  def getRowAttrs(section: RepeatingSection, fields: Seq[FieldLike[_]]): Future[Map[String, RowAttributeValues]] = {
+    val p = Promise[Map[String, RowAttributeValues]]();
+    Roll20.getSectionIDs(section.cls, (ids: js.Array[String]) => {
+      val attrNames = ids.map(id => fields.map(f => f.accessor(id))).flatten.toJSArray;
+      Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
+        val data = DataAttributeValues(values.toMap);
+        val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
+        p.success(attrs); ()
+      });
+    });
+    p.future
+  }
+
+  def getAttrs(fields: Set[FieldLike[_]]): Future[AttributeValues] = {
+    val attrNames: js.Array[String] = fields.map(_.accessor).toJSArray;
+    val p = Promise[AttributeValues]();
+    Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
+      p.success(DataAttributeValues(values.toMap)); ()
+    });
+    p.future
+  }
+
+  def getAttr[T](field: FieldLike[T]): Future[Option[T]] = {
+    getAttrs(Set(field)).map(attr => attr(field))
+  }
+
+  def setAttr[T](field: FieldLike[T], value: T, silent: Boolean = true): Future[Unit] = {
+    setAttrs(Map(field.asInstanceOf[FieldLike[Any]] -> value), silent)
+  }
+
+  def setAttrs(values: Map[FieldLike[Any], Any], silent: Boolean = true): Future[Unit] = {
+    val valuesWithNames = values.map({
+      case (f, v) => (f.accessor -> v.asInstanceOf[js.Any])
+    }).toJSDictionary;
+    val p = Promise[Unit]();
+    log(s"Setting attrs: ${valuesWithNames.mkString}");
+    Roll20.setAttrs(valuesWithNames, SetterOptions.silent(silent), () => {
+      p.success (); ()
+    });
+    //Roll20.setAttrs(valuesWithNames);
+    p.future
+  }
+
+  def on(trigger: String, callback: Function1[Roll20.EventInfo, Unit]): Unit = {
+    subscriptions.addBinding(trigger, callback);
+  }
+
+  def onChange[T](field: FieldLike[T], callback: Function1[Roll20.EventInfo, Unit]): Unit = {
+    on(s"change:${field.selector}", callback);
+  }
+
+  def updateOnChange[T](field: FieldLike[T], mapper: T => T): Unit = {
+    val callback = (info: Roll20.EventInfo) => {
+      val newValOF = getAttr(field).map(oldValO => oldValO.map(mapper));
+      newValOF.onComplete {
+        case Success(Some(newVal)) => setAttr(field, newVal);
+        case _                     => log(s"There was an issue updating ${field.attr}!")
+      }
+    };
+    onChange(field, callback);
+  }
+
+  def onOpen(callback: Function1[Roll20.EventInfo, Unit]): Unit = {
+    on("sheet:opened", callback);
+  }
+
+  def onOpen(callback: => Unit): Unit = {
+    val f = callback _;
+    onOpen(_ => f());
+  }
+
+  implicit class FieldAssignable[T](f: FieldLike[T]) {
+    def <<=(v: T): (FieldLike[Any], Any) = (f -> v).asInstanceOf[(FieldLike[Any], Any)];
+  }
+
+  def bind[T](partialOp: FieldOps[T]): FieldOpsWithCompleter[T] with FieldOpsWithChain[T] = {
+    partialOp match {
+      case partial: SheetWorkerOpPartial[T] => new SheetWorkerBinding(partial)
+      case x                                => throw new java.lang.IllegalArgumentException(x.toString());
+    }
+  }
+
+  def op[T](f: FieldLike[T]): FieldOps[T] = {
+    val mapper = (attrs: AttributeValues) => attrs(f);
+    val ctx = new SheetWorkerOpPartial(Tuple1(f), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2](f1: FieldLike[T1], f2: FieldLike[T2]): FieldOps[(T1, T2)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2)
+    } yield (t1, t2)
+    val ctx = new SheetWorkerOpPartial((f1, f2), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): FieldOps[(T1, T2, T3)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3)
+    } yield (t1, t2, t3)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4]): FieldOps[(T1, T2, T3, T4)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4)
+    } yield (t1, t2, t3, t4)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4], f5: FieldLike[T5]): FieldOps[(T1, T2, T3, T4, T5)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5)
+    } yield (t1, t2, t3, t4, t5)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12],
+    f13: FieldLike[T13]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10);
+      t11 <- attrs(f11);
+      t12 <- attrs(f12);
+      t13 <- attrs(f13)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13), mapper, this);
+    ctx
+  }
+
+  // TODO either do more or figure out the templating thingy
+
+  //  def getAttrs[T1, T2](f1: FieldLike[T1], f2: FieldLike[T2]): Future[Option[(T1, T2)]] = {
+  //    val mapper = (attrs: AttributeValues) => for {
+  //      t1 <- attrs(f1);
+  //      t2 <- attrs(f2)
+  //    } yield (t1, t2);
+  //    val gF = getAttrs(Seq(f1, f2));
+  //    gF.map(mapper)
+  //  }
+  //
+  //  def getAttrs[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): Future[Option[(T1, T2, T3)]] = {
+  //    val mapper = (attrs: AttributeValues) => for {
+  //      t1 <- attrs(f1);
+  //      t2 <- attrs(f2);
+  //      t3 <- attrs(f3)
+  //    } yield (t1, t2, t3);
+  //    val gF = getAttrs(Seq(f1, f2, f3));
+  //    gF.map(mapper)
+  //  }
+
+  def error(s: String): Unit = {
+    log(s"ERROR: ${s}");
+  }
+
+  def error(t: Throwable): Unit = error(t.toString);
+
+  def debug(s: String): Unit = {
+    log(s"DEBUG: ${s}");
+  }
+
+  def info(s: String): Unit = {
+    log(s"INFO: ${s}");
+  }
+
+  def log(s: String): Unit = {
+    dynGlobal.console.log(s);
+  }
+
+  // override things Roll20 dereferences for sheet workers
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  class Worker {
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  }
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def addEventListener = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def removeEventListener = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def importScripts = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  class XMLHttpRequest {
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  }
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def postMessage = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def attachEvent = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  def detachEvent = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
+  class ActiveXObject {
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  }
+
+  object SourceType {
+    val player: String = "player";
+    val sheetworker: String = "sheetworker";
+  }
+
+  object SetterOptions {
+    val silentTrue = dynLiteral(silent = true);
+    val silentFalse = dynLiteral(silent = false);
+    def silent(option: Boolean) = if (option) silentTrue else silentFalse;
+  }
+
+}
