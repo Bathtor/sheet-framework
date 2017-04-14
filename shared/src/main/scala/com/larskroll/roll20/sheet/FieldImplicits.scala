@@ -76,5 +76,9 @@ object FieldImplicits {
     case x       => throw new IllegalArgumentException(x);
   });
   implicit val readableChat = toReadable[ChatCommand](Chat.fromString(_));
+  implicit val readableArrayString = toReadable[Array[String]](_ match {
+    case "[]" => Array[String]()
+    case x    => ??? //TODO implement me (simply convert from json array)
+  });
 
 }

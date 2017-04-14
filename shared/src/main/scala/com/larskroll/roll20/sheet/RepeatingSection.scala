@@ -27,19 +27,56 @@ package com.larskroll.roll20.sheet
 
 trait RepeatingSection extends Fields {
   def name: String;
-  def cls: String = s"${RepeatingSection.prefix}${name}";
+
+  lazy val cls: String = {
+    assert(!name.contains("_"), "Repeating section names may not contain underscores in Roll20!");
+    s"${RepeatingSection.prefix}${name}";
+  }
+  override def qualifier: Option[String] = Some(name);
   override def mapAccess(rowId: String, s: String): String = s"${RepeatingSection.prefix}${name}_${rowId}_$s";
   override def mapAccess(s: String): String = s"${RepeatingSection.prefix}${name}_$s";
   override def mapSelect(s: String): String = s"${RepeatingSection.prefix}${name}:$s";
 
   def at[T](rowId: String, f: FieldLike[T]): FieldAtRow[T] = FieldAtRow(this, rowId, f);
+
+  val reporder = ReporderField(this);
+  lazy val selector = cls;
+
+  override def toString: String = s"repeating_${name}";
 }
 
 object RepeatingSection {
   val prefix = "repeating_";
 }
 
+case class ReporderField(section: RepeatingSection) extends FieldLike[Array[String]] with RenderingContext {
+
+  val _accessor = s"_reporder_${RepeatingSection.prefix}${section.name}";
+
+  override def qualifier: Option[String] = section.qualifier;
+  override def mapAccess(rowId: String, s: String): String = _accessor;
+  override def mapAccess(s: String): String = _accessor;
+  override def mapSelect(s: String): String = _accessor; // actually the same
+
+  def editable(): Boolean = false;
+  def ctx: RenderingContext = this;
+  def attr: String = _accessor;
+  def initialValue: String = "[]";
+
+  def reader: Readable[Array[String]] = FieldImplicits.readableArrayString;
+
+  /*
+   * Compare fields at row by accessor
+   */
+  override def canEqual(that: Any) = that.isInstanceOf[ReporderField];
+  override def hashCode(): Int = _accessor.hashCode();
+  override def equals(that: Any): Boolean = canEqual(that) && (that.asInstanceOf[ReporderField]._accessor == this._accessor);
+
+}
+
 case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldLike[T]) extends FieldLike[T] with RenderingContext {
+
+  override def qualifier: Option[String] = section.qualifier;
   override def mapAccess(rowId: String, s: String): String = section.mapAccess(rowId, s);
   override def mapAccess(s: String): String = section.mapAccess(rowId, s);
   override def mapSelect(s: String): String = section.mapSelect(s);
@@ -52,7 +89,7 @@ case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldL
   def reader: Readable[T] = field.reader;
 
   /*
-   * Compare fields by attr
+   * Compare fields at row by accessor
    */
   override def canEqual(that: Any) = that.isInstanceOf[FieldAtRow[_]];
   override def hashCode(): Int = accessor.hashCode();

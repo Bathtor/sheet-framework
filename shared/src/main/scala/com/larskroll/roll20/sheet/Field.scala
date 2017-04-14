@@ -29,10 +29,11 @@ trait FieldLike[T] {
   def editable(): Boolean;
   def ctx: RenderingContext;
   def attr: String;
-  def name: String = s"attr_${attr}";
-  def accessor: String = ctx.mapAccess(attr);
-  def accessor(rowId: String): String = ctx.mapAccess(rowId, attr);
-  def selector: String = ctx.mapSelect(attr);
+  def qualifiedAttr: String = ctx.qualifier.map(q => s"${q}_$attr").getOrElse(attr);
+  def name: String = s"attr_${qualifiedAttr}";
+  def accessor: String = ctx.mapAccess(qualifiedAttr);
+  def accessor(rowId: String): String = ctx.mapAccess(rowId, qualifiedAttr);
+  def selector: String = ctx.mapSelect(qualifiedAttr);
   def initialValue: String;
 
   def reader: Readable[T];
@@ -45,8 +46,8 @@ trait FieldLike[T] {
    * Compare fields by attr
    */
   def canEqual(that: Any) = that.isInstanceOf[FieldLike[_]];
-  override def hashCode(): Int = attr.hashCode();
-  override def equals(that: Any): Boolean = canEqual(that) && (that.asInstanceOf[FieldLike[_]].attr == this.attr);
+  override def hashCode(): Int = qualifiedAttr.hashCode();
+  override def equals(that: Any): Boolean = canEqual(that) && (that.asInstanceOf[FieldLike[_]].qualifiedAttr == this.qualifiedAttr);
 }
 
 sealed trait Field[T] extends FieldLike[T] {
@@ -93,15 +94,15 @@ case class TextField(ctx: RenderingContext, attr: String, defaultValue: Option[S
   override def editable(b: Boolean): TextField = TextField(ctx, attr, defaultValue, b);
 }
 
-case class EnumField(ctx: RenderingContext, attr: String, defaultValue: Option[String], options: Set[String], editable: Boolean = false) extends Field[String] {
+case class EnumField(ctx: RenderingContext, attr: String, defaultValue: Option[String], options: Set[String], enum: Option[Enumeration], editable: Boolean = false) extends Field[String] {
   type F = EnumField
 
   override def reader = FieldImplicits.readableString; // maybe check that value is actually a member of options?
   override def fieldDefault: String = if (options.isEmpty) { "" } else { options.head };
 
-  override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, editable);
-  def default(s: Any): EnumField = EnumField(ctx, attr, Some(s.toString()), options, editable); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
-  override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, b);
+  override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, enum, editable);
+  def default(s: Any): EnumField = EnumField(ctx, attr, Some(s.toString()), options, enum, editable); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
+  override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, enum, b);
 }
 
 case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[Void] = None, editable: Boolean = true) extends Field[Void] {
@@ -115,8 +116,8 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
   def default(b: Boolean): FlagField = FlagField(ctx, attr, Some(b), editable);
   def default(s: String): TextField = new TextField(ctx, attr, Some(s), editable);
   def default[N](num: N)(implicit n: Numeric[N], r: Readable[N]): NumberField[N] = NumberField(ctx, attr, r, Some(num), editable);
-  def options(opts: String*): EnumField = EnumField(ctx, attr, None, opts.toSet, editable);
-  def options(e: Enumeration): EnumField = EnumField(ctx, attr, None, e.values.map(_.toString).toSet, editable);
+  def options(opts: String*): EnumField = EnumField(ctx, attr, None, opts.toSet, None, editable);
+  def options(e: Enumeration): EnumField = EnumField(ctx, attr, None, e.values.map(_.toString).toSet, Some(e), editable);
   override def editable(b: Boolean): VoidField = VoidField(ctx, attr, defaultValue, b);
   def autocalc(expr: AutocalcExpression[String])(implicit dummy: DummyImplicit): AutocalcField[String] = {
     return new AutocalcField(TextField(ctx, this.attr), expr);

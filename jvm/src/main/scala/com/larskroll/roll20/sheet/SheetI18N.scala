@@ -28,7 +28,6 @@ package com.larskroll.roll20.sheet
 import scalatags.Text.all._
 //import scalatags.generic._
 import collection.mutable
-import upickle.default._
 
 trait SheetI18N extends Renderable {
   val entries = mutable.Map.empty[String, String];
@@ -45,10 +44,20 @@ trait SheetI18N extends Renderable {
     Abbreviation(abbrL, fullL.title)
   }
 
+  def enum(prefix: String, options: Map[String, String]): OptionLabel = {
+    val opts = options.map {
+      case (key, default) => key -> text(s"${prefix}-$key", default)
+    };
+    return new OptionLabel(opts);
+  }
+
   // TODO dynamic key replacement
 
   override def render(): String = {
-    write(entries.toMap);
+    val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
+    sortedEntries.map {
+      case (k, v) => s"""\"$k\":\"$v\""""
+    }.mkString("{", ",", "}")
   }
 }
 
@@ -60,6 +69,7 @@ object SheetI18N {
   val datai18nLabel = attr("data-i18n-label");
   val datai18nPlaceholder = attr("data-i18n-placeholder");
   private[sheet] val strAttr = genericAttr[String];
+  val datai18nDynamic = attr("data-i18n-dynamic").empty;
 }
 
 import SheetI18N._
@@ -72,6 +82,13 @@ sealed trait LabelsI18N {
 
 case class LabelSeq(labels: Seq[LabelI18N]) extends LabelsI18N {
   override def attrs: Seq[AttrPair] = labels.flatMap(_.attrs);
+}
+
+class OptionLabel(options: Map[String, LabelI18N]) extends LabelsI18N {
+
+  def labels: Seq[LabelI18N] = options.values.toSeq;
+  override def attrs: Seq[AttrPair] = labels.flatMap(_.attrs);
+  def apply(option: String): LabelI18N = options(option);
 }
 
 case class Abbreviation(abbrLabel: LabelI18N, fullLabel: LabelI18N) extends LabelsI18N {

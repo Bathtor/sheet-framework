@@ -50,9 +50,11 @@ object TestWorkers extends SheetWorker {
     case i => Seq(testRes <<= i + 5)
   }
 
-  val sideOp = op(testIntermediate) {
-    case Some(i) => println(s"Lala $i");
-    case None    => println("Nothing ;(");
+  val sideOp = op(testIntermediate) { (o: Option[Int]) =>
+    o match {
+      case Some(i) => println(s"Lala $i");
+      case None    => println("Nothing ;(");
+    }
   }
 
   val op1 = bind(op(test1, test2)) update (ttt, interOp);

@@ -30,6 +30,7 @@ trait Renderable {
 }
 
 trait RenderingContext {
+  def qualifier: Option[String] = None;
   def mapAccess(rowId: String, s: String): String;
   def mapAccess(s: String): String;
   def mapSelect(s: String): String;

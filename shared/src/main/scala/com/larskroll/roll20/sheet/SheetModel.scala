@@ -30,6 +30,8 @@ trait SheetModel extends Fields {
   val versionField = text("version").editable(false).default(version);
   val characterName = text("character_name");
   def version(): String;
+
+  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
   override def mapAccess(rowId: String, s: String): String = s;
   override def mapAccess(s: String): String = s;
   override def mapSelect(s: String): String = s;

@@ -70,7 +70,7 @@ trait TabbedSheet extends Sheet {
     val tabStyle = tabs.map(_.css).mkString("\n");
     val es = (tabbedStyle :: externalStyles).map(styleURL => {
       val source = io.Source.fromURL(styleURL);
-      val sourceString = try source.mkString finally source.close();
+      val sourceString = try CSSUtil.processFile(source) finally source.close();
       val replacedString = colourScheme.replaceColoursInText(sourceString);
       replacedString
     });

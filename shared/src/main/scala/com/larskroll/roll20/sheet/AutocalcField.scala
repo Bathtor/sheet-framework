@@ -63,7 +63,7 @@ object RoundingFunction {
 object AutocalcExprs {
 
   case class FieldAccess[T](field: FieldLike[T]) extends AutocalcExpression[T] {
-    override def render: String = s"@{${field.attr}}"
+    override def render: String = s"@{${field.qualifiedAttr}}"
     def selected = SelectedAttributeAccess(field);
     def target = TargetedAttributeAccess(field, None);
     def target(t: String) = TargetedAttributeAccess(field, Some(t));
@@ -71,13 +71,13 @@ object AutocalcExprs {
 
   case class TargetedAttributeAccess[T](field: FieldLike[T], target: Option[String]) extends AutocalcExpression[T] {
     override def render: String = target match {
-      case Some(t) => s"@{target|${t}|${field.attr}}"
-      case None    => s"@{target|${field.attr}}"
+      case Some(t) => s"@{target|${t}|${field.qualifiedAttr}}"
+      case None    => s"@{target|${field.qualifiedAttr}}"
     }
   }
 
   case class SelectedAttributeAccess[T](field: FieldLike[T]) extends AutocalcExpression[T] {
-    override def render: String = s"@{selected|${field.attr}}"
+    override def render: String = s"@{selected|${field.qualifiedAttr}}"
   }
 
   case class Literal[T](t: T) extends AutocalcExpression[T] {

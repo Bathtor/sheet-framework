@@ -44,8 +44,15 @@ case class DataAttributeValues(values: Map[String, Any]) extends AttributeValues
         case a                                 => field.read(a.toString);
       }
     } else {
-      None
+      field match {
+        case f: Field[T] => f.defaultValue
+        case _           => None
+      }
     }
+  }
+
+  override def toString: String = {
+    s"DataAttributeValues(${values.mkString(",")})"
   }
 
 }
@@ -60,8 +67,15 @@ case class RowAttributeValues(rowId: String, original: DataAttributeValues) exte
         case a                                 => field.read(a.toString);
       }
     } else {
-      None
+      field match {
+        case f: Field[T] => f.defaultValue
+        case _           => None
+      }
     }
+  }
+
+  override def toString: String = {
+    s"RowAttributeValues($rowId => $original)"
   }
 }
 
@@ -87,6 +101,19 @@ case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], origina
     } else {
       original(field)
     }
+  }
+
+  override def toString: String = {
+    val data = original match {
+      case DataAttributeValues(values) => values.map {
+        case (k, v) => s"$k -> $v -> ${apply(k)}"
+      }
+      case RowAttributeValues(rowId, original) => original.values.map {
+        case (k, v) => s"$k @ $rowId -> $v -> ${apply(k)}"
+      }
+      case _ => Seq("Invalid")
+    }
+    s"ReadThroughAttributeValues(${data.mkString(",")})"
   }
 
   private[sheet] def replaceValues(updates: Seq[(FieldLike[Any], Any)]): ReadThroughAttributeValues = {

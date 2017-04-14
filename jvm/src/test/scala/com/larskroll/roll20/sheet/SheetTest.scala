@@ -73,7 +73,8 @@ object TestSheet extends SimpleSheet {
     editOnly(m.str),
     m.strMod,
     m.strSave,
-    skillGroup);
+    skillGroup,
+    m.test like { tf => span(name := tf.name, SheetI18N.datai18nDynamic) });
 
   val skillGroup = m.skills(
     label(t.skillMod),
@@ -120,10 +121,17 @@ class SheetTest extends FunSuite with Matchers {
   }
 
   test("Accessors and Selectors for fields should return the right values") {
-    TestSheetModel.str.accessor shouldBe "str";
-    TestSheetModel.str.selector shouldBe "str";
-    TestSheetModel.skills.mod.accessor shouldBe "repeating_skills_skillmod";
-    TestSheetModel.skills.mod.selector shouldBe "repeating_skills:skillmod";
+    import TestSheetModel._
+    import skills._
+
+    str.accessor shouldBe "str";
+    str.selector shouldBe "str";
+    mod.accessor shouldBe "repeating_skills_skills_skillmod";
+    skills.at("rid", mod).accessor shouldBe "repeating_skills_rid_skills_skillmod";
+    mod.selector shouldBe "repeating_skills:skills_skillmod";
+    skills.at("rid", mod).selector shouldBe "repeating_skills:skills_skillmod";
+    skills.reporder.accessor shouldBe "_reporder_repeating_skills";
+    skills.reporder.selector shouldBe "_reporder_repeating_skills";
     TestSheetModel.test.accessor shouldBe "test";
     TestSheetModel.test.selector shouldBe "test";
   }

@@ -45,6 +45,8 @@ trait GroupRenderer {
 
   import GroupRenderer._
 
+  def apply(elems: SheetElement*) = GroupWithRenderer(this, elems);
+
   val defaultFieldRenderer: FieldRenderer = {
     case (f, _) => span(name := f.name, visibility.hidden)
   };

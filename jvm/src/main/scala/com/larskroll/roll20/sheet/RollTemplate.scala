@@ -51,6 +51,14 @@ trait RollTemplate extends Renderable {
     Seq[Modifier](start, body, end)
   }
 
+  def switchExists(f: TemplateField[Nothing], ifexists: => Modifier, ifnotexists: => Modifier): Modifier = {
+    val helper = f.name;
+    val startIf = raw(s"{{#${helper}}}");
+    val startIfNot = raw(s"{{^${helper}}}");
+    val end = raw(s"{{/${helper}}}");
+    Seq[Modifier](startIf, ifexists, end, startIfNot, ifnotexists, end)
+  }
+
   def not(f: HelperFunc)(body: => Modifier): Modifier = {
     val helper = f.render;
     val start = raw(s"{{#^${helper}}}");

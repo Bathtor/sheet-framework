@@ -47,6 +47,10 @@ trait SheetWorker {
 
   val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]] with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 
+  val fieldSerialisers = new mutable.HashMap[String, Serialiser[Any]];
+  val typeSerialisers = new mutable.HashMap[String, Serialiser[Any]];
+  val defaultSerialiser = DefaultSerialiser;
+
   @JSExport
   def load() {
     subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
@@ -55,8 +59,34 @@ trait SheetWorker {
         val f = (e: Roll20.EventInfo) => {
           callbacks.foreach { c => c(e) }
         }
-        log(s"DEBUG: Subscribing sheetworker on trigger: ${k}.");
+        debug(s"Subscribing sheetworker on trigger: ${k}.");
         Roll20.on(k, f);
+      }
+    }
+    debug("------ Registered Serialisers -------");
+    fieldSerialisers.foreach {
+      case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
+    }
+    typeSerialisers.foreach {
+      case (t, s) => debug(s"${t} -> ${s.getClass.getName}")
+    }
+  }
+
+  def register[T](f: FieldLike[T], s: Serialiser[T]) {
+    fieldSerialisers += (f.accessor -> s.asInstanceOf[Serialiser[Any]]); // just throw away the type info
+  }
+
+  def register[T: reflect.ClassTag](s: Serialiser[T]) {
+    val staticClass = reflect.classTag[T].runtimeClass;
+    typeSerialisers += (staticClass.getName -> s.asInstanceOf[Serialiser[Any]])
+  }
+
+  def serialise[T](f: FieldLike[T], v: T): js.Any = {
+    fieldSerialisers.get(f.accessor) match {
+      case Some(s) => s.serialise(v)
+      case None => typeSerialisers.get(v.getClass().getName) match {
+        case Some(s) => s.serialise(v)
+        case None    => defaultSerialiser.serialise(v)
       }
     }
   }
@@ -70,6 +100,40 @@ trait SheetWorker {
         val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
         p.success(attrs); ()
       });
+    });
+    p.future
+  }
+
+  def forAllRows(section: RepeatingSection, op: SheetWorkerOp): Future[Unit] = {
+    val p = Promise[Unit]();
+    Roll20.getSectionIDs(section.cls, (ids: js.Array[String]) => {
+      op match {
+        case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain => {
+          val attrNames = ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
+          Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
+            val data = DataAttributeValues(values.toMap);
+            val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
+            val output = attrs.mapValues(attrs => op.computeOutput(attrs));
+            val outputData = output.map {
+              case (id, values) => values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }
+            }.flatten.toMap.toJSDictionary;
+            Roll20.setAttrs(outputData, SetterOptions.silent(true), () => {
+              p.success(); ()
+            })
+            ()
+          });
+        }
+        case coc: ChainedOpChain => {
+          val f = coc.operations.foldLeft(Future.successful(())) {
+            case (f, op) => f andThen {
+              case Success(_) => op.fold(forAllRows(section, _), forAllRows(section, _))
+              case Failure(e) => error(e)
+            }
+          };
+          p.completeWith(f);
+        }
+      };
+      ()
     });
     p.future
   }
@@ -93,7 +157,7 @@ trait SheetWorker {
 
   def setAttrs(values: Map[FieldLike[Any], Any], silent: Boolean = true): Future[Unit] = {
     val valuesWithNames = values.map({
-      case (f, v) => (f.accessor -> v.asInstanceOf[js.Any])
+      case (f, v) => (f.accessor -> serialise(f, v))
     }).toJSDictionary;
     val p = Promise[Unit]();
     log(s"Setting attrs: ${valuesWithNames.mkString}");
@@ -110,6 +174,10 @@ trait SheetWorker {
 
   def onChange[T](field: FieldLike[T], callback: Function1[Roll20.EventInfo, Unit]): Unit = {
     on(s"change:${field.selector}", callback);
+  }
+
+  def onChange(section: RepeatingSection, callback: Function1[Roll20.EventInfo, Unit]): Unit = {
+    on(s"change:${section.selector}", callback);
   }
 
   def updateOnChange[T](field: FieldLike[T], mapper: T => T): Unit = {
@@ -142,6 +210,8 @@ trait SheetWorker {
       case x                                => throw new java.lang.IllegalArgumentException(x.toString());
     }
   }
+
+  def nop: FieldOps[Unit] = NoOp(this);
 
   def op[T](f: FieldLike[T]): FieldOps[T] = {
     val mapper = (attrs: AttributeValues) => attrs(f);
@@ -191,6 +261,73 @@ trait SheetWorker {
     ctx
   }
 
+  def op[T1, T2, T3, T4, T5, T6](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6]): FieldOps[(T1, T2, T3, T4, T5, T6)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6)
+    } yield (t1, t2, t3, t4, t5, t6)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7]): FieldOps[(T1, T2, T3, T4, T5, T6, T7)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7)
+    } yield (t1, t2, t3, t4, t5, t6, t7)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9), mapper, this);
+    ctx
+  }
+
   def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
@@ -208,6 +345,49 @@ trait SheetWorker {
       t10 <- attrs(f10)
     } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10)
     val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10);
+      t11 <- attrs(f11)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10);
+      t11 <- attrs(f11);
+      t12 <- attrs(f12)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12), mapper, this);
     ctx
   }
 

@@ -32,7 +32,15 @@ import annotation.tailrec
 
 sealed trait FieldOps[T] {
 
-  def apply(f: Option[T] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def apply(f: Option[T] => Unit)(implicit ec: ExecutionContext, dummy: DummyImplicit): SheetWorkerOp = {
+    val f2 = (ot: Option[T]) => {
+      val p = Promise[Unit]();
+      p.success(f(ot));
+      p.future
+    };
+    apply(f2)
+  };
+  def apply(f: Option[T] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp;
 
   def sheet: SheetWorker;
 
@@ -40,25 +48,61 @@ sealed trait FieldOps[T] {
 }
 
 sealed trait FieldOpsWithCompleter[T] extends FieldOps[T] {
-  def apply(f: Option[T] => Unit, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def apply(f: Option[T] => Unit, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext, dummy: DummyImplicit): SheetWorkerOp = {
+    val f2 = (ot: Option[T]) => {
+      val p = Promise[Unit]();
+      p.success(f(ot));
+      p.future
+    };
+    apply(f2, onComplete)
+  };
+  def apply(f: Option[T] => Future[Unit], onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
 
   def update(f: T => Seq[(FieldLike[Any], Any)], onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
 }
 
 sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
-  def apply(f: Option[T] => Unit, op: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def apply(f: Option[T] => Unit, op: SheetWorkerOp)(implicit ec: ExecutionContext, dummy: DummyImplicit): SheetWorkerOp = {
+    val f2 = (ot: Option[T]) => {
+      val p = Promise[Unit]();
+      p.success(f(ot));
+      p.future
+    };
+    apply(f2, op)
+  };
+
+  def apply(f: Option[T] => Future[Unit], op: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
 
   def update(f: T => Seq[(FieldLike[Any], Any)], nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
 }
 
-class SheetWorkerOpPartial[T](private val t: Product, val mapper: AttributeValues => Option[T], val sheet: SheetWorker) extends FieldOps[T] {
+sealed trait FieldOpsWithFields[T] extends FieldOps[T] {
+  def getFields: Seq[FieldLike[Any]];
+  def mapper: AttributeValues => Option[T];
+}
+
+case class NoOp(sheet: SheetWorker) extends FieldOpsWithFields[Unit] {
+
+  def getFields: Seq[FieldLike[Any]] = Seq.empty;
+  def mapper: AttributeValues => Option[Unit] = (_: AttributeValues) => Some(());
+
+  override def apply(f: Option[Unit] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp = {
+    new SideEffectingSheetWorkerOp(this, f);
+  }
+
+  override def update(f: Unit => Seq[(FieldLike[Any], Any)])(implicit ec: ExecutionContext): SheetWorkerOp = {
+    new WritingSheetWorkerOp(this, f);
+  }
+}
+
+class SheetWorkerOpPartial[T](private val t: Product, val mapper: AttributeValues => Option[T], val sheet: SheetWorker) extends FieldOpsWithFields[T] {
 
   val getFields = t.productIterator.map {
     case f: FieldLike[Any] @unchecked => f
     case x                            => throw new IllegalArgumentException(s"Expected FieldLike, got $x");
   }.toSeq;
 
-  override def apply(f: Option[T] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp = {
     new SideEffectingSheetWorkerOp(this, f);
   }
 
@@ -74,19 +118,19 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T]) extends FieldOpsWi
 
   val trigger: String = getFields.map(f => s"change:${f.selector}").mkString(" ");
 
-  override def apply(f: Option[T] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp = {
     val op = new SideEffectingSheetWorkerOp(partial, f);
     bind(op);
     op
   }
 
-  override def apply(f: Option[T] => Unit, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[Unit], onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
     val op = new SideEffectingSheetWorkerOp(partial, f);
     bind(op, onComplete);
     op
   }
 
-  override def apply(f: Option[T] => Unit, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[Unit], nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp = {
     val op = new SideEffectingSheetWorkerOp(partial, f) andThen nextOp;
     bind(op);
     op
@@ -136,7 +180,7 @@ sealed trait SheetWorkerOp {
     val p = Promise[Unit]();
     sheet.log(s"Getting values:\n${inputFields.map(_.accessor).mkString(",")}");
     val setF = for {
-      attrs <- sheet.getAttrs(inputFields);
+      attrs <- getIfNecessary(inputFields);
       set <- setIfNecessary(computeOutput(attrs))
     } yield set;
     p.completeWith(setF);
@@ -145,6 +189,21 @@ sealed trait SheetWorkerOp {
 
   def ++(ops: List[SheetWorkerOp]): SheetWorkerOp = SheetWorkerOpChain(this :: ops);
   def andThen(op: SheetWorkerOp): SheetWorkerOp = this ++ List(op);
+  def all(section: RepeatingSection)(implicit ec: ExecutionContext): SheetWorkerOp = {
+    NoOp(sheet) { _: Option[Unit] =>
+      sheet.forAllRows(section, this)
+    }
+  }
+
+  protected def getIfNecessary(input: Set[FieldLike[_]]): Future[AttributeValues] = {
+    if (input.isEmpty) {
+      sheet.log("Not getting any values as input fields were empty.");
+      Promise[AttributeValues].success(null).future
+    } else {
+      sheet.log(s"Getting values:\n${input.map(f => f.accessor).mkString(",")}")
+      sheet.getAttrs(input);
+    }
+  }
 
   protected def setIfNecessary(output: Seq[(FieldLike[Any], Any)]): Future[Unit] = {
     if (output.isEmpty) {
@@ -157,7 +216,7 @@ sealed trait SheetWorkerOp {
   }
 }
 
-case class SideEffectingSheetWorkerOp[T](partial: SheetWorkerOpPartial[T], application: Option[T] => Unit) extends SheetWorkerOp {
+case class SideEffectingSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: Option[T] => Future[Unit]) extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
   override def computeOutput(attrs: AttributeValues): Seq[(FieldLike[Any], Any)] = {
@@ -166,13 +225,16 @@ case class SideEffectingSheetWorkerOp[T](partial: SheetWorkerOpPartial[T], appli
   }
 }
 
-case class WritingSheetWorkerOp[T](partial: SheetWorkerOpPartial[T], application: T => Seq[(FieldLike[Any], Any)]) extends SheetWorkerOp {
+case class WritingSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: T => Seq[(FieldLike[Any], Any)]) extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
   override def computeOutput(attrs: AttributeValues): Seq[(FieldLike[Any], Any)] = {
     partial.mapper(attrs) match {
       case Some(t) => application(t)
-      case None    => sheet.error(s"Could not get attributes for ${partial.getFields.mkString(",")}"); Seq()
+      case None => {
+        val missing = inputFields.map(f => f -> attrs(f)).filter(t => t._2.isEmpty);
+        sheet.error(s"Could not get attributes for:\n${missing.mkString(",")}\nGot:\n${attrs}"); Seq()
+      }
     }
   }
 }

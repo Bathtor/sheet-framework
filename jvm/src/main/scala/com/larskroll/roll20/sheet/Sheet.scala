@@ -43,7 +43,7 @@ trait SimpleSheet extends Sheet {
   override def renderStyle(): String = {
     val es = externalStyles.map(styleURL => {
       val source = io.Source.fromURL(styleURL);
-      try source.mkString finally source.close()
+      try CSSUtil.processFile(source) finally source.close()
     });
     (es ++ Seq(style.styleSheetText)).mkString("\n");
   }
