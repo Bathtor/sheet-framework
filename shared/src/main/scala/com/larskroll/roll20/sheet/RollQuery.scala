@@ -27,6 +27,7 @@ package com.larskroll.roll20.sheet
 
 trait RollQuery[T] extends Renderable {
   def expr(implicit ev: T =:= Int) = RollExprs.WithIntQuery(this.asInstanceOf[RollQuery[Int]]);
+  def arith(implicit ev: T =:= Int) = RollExprs.Arith(expr(ev));
 }
 
 case class InputQuery[T](name: String, defaultValue: Option[T]) extends RollQuery[T] {
@@ -38,4 +39,11 @@ case class InputQuery[T](name: String, defaultValue: Option[T]) extends RollQuer
 
 case class SelectQuery[T](name: String, options: Seq[T]) extends RollQuery[T] {
   override def render: String = s"?{Select $name|${options.mkString("|")}}";
+}
+
+case class LabelledSelectQuery[T](name: String, options: Seq[(String, T)]) extends RollQuery[T] {
+  lazy val stringOptions = options.map {
+    case (l, t) => s"$l,$t"
+  }.mkString("|");
+  override def render: String = s"?{Select $name|$stringOptions}";
 }

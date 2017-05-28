@@ -40,6 +40,7 @@ case class SheetWorkerAPIException(msg: String) extends Throwable {
 @JSExportDescendentObjects
 trait SheetWorker {
   import js.JSConverters._
+  import SheetWorkerTypeShorthands._
   //import scala.concurrent.ExecutionContext.Implicits.global
   //import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow;
 
@@ -50,6 +51,8 @@ trait SheetWorker {
   val fieldSerialisers = new mutable.HashMap[String, Serialiser[Any]];
   val typeSerialisers = new mutable.HashMap[String, Serialiser[Any]];
   val defaultSerialiser = DefaultSerialiser;
+
+  def children: Seq[SheetWorker] = Seq.empty;
 
   @JSExport
   def load() {
@@ -63,6 +66,7 @@ trait SheetWorker {
         Roll20.on(k, f);
       }
     }
+    children.foreach(_.load());
     debug("------ Registered Serialisers -------");
     fieldSerialisers.foreach {
       case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
@@ -104,30 +108,71 @@ trait SheetWorker {
     p.future
   }
 
-  def forAllRows(section: RepeatingSection, op: SheetWorkerOp): Future[Unit] = {
-    val p = Promise[Unit]();
+  def foldRows[Acc, T](section: RepeatingSection, fields: FieldOpsWithFields[T],
+                       initialValue: Acc, f: (Acc, (String, T)) => Acc,
+                       r: Acc => Updates): Future[ChainingDecision] = {
+    val resF = for {
+      rows <- getRowAttrs(section, fields.getFields)
+    } yield {
+      val out = rows.foldLeft(initialValue) {
+        case (acc, (id, attrs)) => {
+          fields.mapper(attrs) match {
+            case Some(t) => f(acc, (id, t))
+            case None    => acc
+          }
+        }
+      };
+      val data = r(out);
+      if (data.isEmpty) {
+        debug(s"No updates from fold. Skipping write and chain.");
+        Future.successful(SkipChain)
+      } else {
+        setAttrs(data.toMap).map(_ => ExecuteChain)
+      }
+    };
+    resF flatMap identity
+  }
+
+  def forAllRows(section: RepeatingSection, op: SheetWorkerOp): Future[ChainingDecision] = {
+    val p = Promise[ChainingDecision]();
     Roll20.getSectionIDs(section.cls, (ids: js.Array[String]) => {
       op match {
-        case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain => {
+        case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain | _: WritingNoMergeSheetWorkerOp[_] => {
           val attrNames = ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
           Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
             val data = DataAttributeValues(values.toMap);
             val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
             val output = attrs.mapValues(attrs => op.computeOutput(attrs));
-            val outputData = output.map {
-              case (id, values) => values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }
-            }.flatten.toMap.toJSDictionary;
-            Roll20.setAttrs(outputData, SetterOptions.silent(true), () => {
-              p.success(); ()
-            })
+            val outputDataFs = output.map {
+              case (id, output) => output.map {
+                case (values, cd) => (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
+              }
+              //
+            };
+            val outputDataF = Future.sequence(outputDataFs).map { outputData =>
+              val emptyAcc: (Map[String, js.Any], ChainingDecision) = (Map.empty[String, js.Any], SkipChain);
+              outputData.foldLeft(emptyAcc) { (acc, dataCD) =>
+                val (mapAcc, cdAcc) = acc;
+                val (data, cd) = dataCD;
+                (mapAcc ++ data, cdAcc | cd)
+              }
+            }
+            //.flatten.toMap.toJSDictionary;
+            outputDataF map {
+              case (outputData, cd) =>
+                Roll20.setAttrs(outputData.toJSDictionary, SetterOptions.silent(true), () => {
+                  p.success(cd); ()
+                })
+            };
             ()
           });
         }
         case coc: ChainedOpChain => {
-          val f = coc.operations.foldLeft(Future.successful(())) {
-            case (f, op) => f andThen {
-              case Success(_) => op.fold(forAllRows(section, _), forAllRows(section, _))
-              case Failure(e) => error(e)
+          val emptyAcc: Future[ChainingDecision] = Future.successful(ExecuteChain);
+          val f = coc.operations.foldLeft(emptyAcc) {
+            case (f, op) => f flatMap {
+              case ExecuteChain => forAllRows(section, op.lift())
+              case SkipChain    => Future.successful(SkipChain)
             }
           };
           p.completeWith(f);
@@ -213,13 +258,13 @@ trait SheetWorker {
 
   def nop: FieldOps[Unit] = NoOp(this);
 
-  def op[T](f: FieldLike[T]): FieldOps[T] = {
+  def op[T](f: FieldLike[T]): FieldOpsWithFields[T] = {
     val mapper = (attrs: AttributeValues) => attrs(f);
     val ctx = new SheetWorkerOpPartial(Tuple1(f), mapper, this);
     ctx
   }
 
-  def op[T1, T2](f1: FieldLike[T1], f2: FieldLike[T2]): FieldOps[(T1, T2)] = {
+  def op[T1, T2](f1: FieldLike[T1], f2: FieldLike[T2]): FieldOpsWithFields[(T1, T2)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2)
@@ -228,7 +273,7 @@ trait SheetWorker {
     ctx
   }
 
-  def op[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): FieldOps[(T1, T2, T3)] = {
+  def op[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): FieldOpsWithFields[(T1, T2, T3)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -238,7 +283,7 @@ trait SheetWorker {
     ctx
   }
 
-  def op[T1, T2, T3, T4](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4]): FieldOps[(T1, T2, T3, T4)] = {
+  def op[T1, T2, T3, T4](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4]): FieldOpsWithFields[(T1, T2, T3, T4)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -249,7 +294,8 @@ trait SheetWorker {
     ctx
   }
 
-  def op[T1, T2, T3, T4, T5](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4], f5: FieldLike[T5]): FieldOps[(T1, T2, T3, T4, T5)] = {
+  def op[T1, T2, T3, T4, T5](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+                             f5: FieldLike[T5]): FieldOpsWithFields[(T1, T2, T3, T4, T5)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -263,7 +309,7 @@ trait SheetWorker {
 
   def op[T1, T2, T3, T4, T5, T6](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
-    f5: FieldLike[T5], f6: FieldLike[T6]): FieldOps[(T1, T2, T3, T4, T5, T6)] = {
+    f5: FieldLike[T5], f6: FieldLike[T6]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -278,7 +324,7 @@ trait SheetWorker {
 
   def op[T1, T2, T3, T4, T5, T6, T7](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
-    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7]): FieldOps[(T1, T2, T3, T4, T5, T6, T7)] = {
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -294,7 +340,7 @@ trait SheetWorker {
 
   def op[T1, T2, T3, T4, T5, T6, T7, T8](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
-    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8)] = {
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -312,7 +358,7 @@ trait SheetWorker {
   def op[T1, T2, T3, T4, T5, T6, T7, T8, T9](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
-    f9: FieldLike[T9]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9)] = {
+    f9: FieldLike[T9]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -331,7 +377,7 @@ trait SheetWorker {
   def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
-    f9: FieldLike[T9], f10: FieldLike[T10]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)] = {
+    f9: FieldLike[T9], f10: FieldLike[T10]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -351,7 +397,7 @@ trait SheetWorker {
   def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
-    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)] = {
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -372,7 +418,7 @@ trait SheetWorker {
   def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12](
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
-    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12)] = {
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -395,7 +441,7 @@ trait SheetWorker {
     f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
     f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
     f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12],
-    f13: FieldLike[T13]): FieldOps[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13)] = {
+    f13: FieldLike[T13]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13)] = {
     val mapper = (attrs: AttributeValues) => for {
       t1 <- attrs(f1);
       t2 <- attrs(f2);
@@ -416,25 +462,6 @@ trait SheetWorker {
   }
 
   // TODO either do more or figure out the templating thingy
-
-  //  def getAttrs[T1, T2](f1: FieldLike[T1], f2: FieldLike[T2]): Future[Option[(T1, T2)]] = {
-  //    val mapper = (attrs: AttributeValues) => for {
-  //      t1 <- attrs(f1);
-  //      t2 <- attrs(f2)
-  //    } yield (t1, t2);
-  //    val gF = getAttrs(Seq(f1, f2));
-  //    gF.map(mapper)
-  //  }
-  //
-  //  def getAttrs[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): Future[Option[(T1, T2, T3)]] = {
-  //    val mapper = (attrs: AttributeValues) => for {
-  //      t1 <- attrs(f1);
-  //      t2 <- attrs(f2);
-  //      t3 <- attrs(f3)
-  //    } yield (t1, t2, t3);
-  //    val gF = getAttrs(Seq(f1, f2, f3));
-  //    gF.map(mapper)
-  //  }
 
   def error(s: String): Unit = {
     log(s"ERROR: ${s}");

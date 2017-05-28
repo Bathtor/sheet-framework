@@ -95,6 +95,8 @@ trait RollTemplate extends Renderable {
   def attribute[T](s: String) = AttributeField[T](s);
 
   def labeli18n(s: String) = LabelField(s);
+
+  def button(s: String) = ButtonField(s);
 }
 
 object RollTemplate {
@@ -194,6 +196,10 @@ object TemplateFields {
   }
 
   case class LabelField(name: String) extends TemplateField[LabelI18N] {
+
+  }
+
+  case class ButtonField(name: String) extends TemplateField[CommandButton] {
 
   }
 }

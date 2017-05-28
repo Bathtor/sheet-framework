@@ -32,9 +32,16 @@ object SheetImplicits {
   implicit def fieldToSheetElem(f: FieldLike[_]): FieldElement = FieldElement(f);
   implicit def tagToSheetElem(t: Tag): TagElement = TagElement(t);
   implicit def groupToSheetElem(fg: FieldGroup): GroupElement = GroupElement(fg);
+
+  private val hiddenRenderer: GroupRenderer.FieldSingleRenderer = f => f match {
+    case b: Button => button(`type` := "roll", name := b.name, value := b.roll.render, display.none)
+    case _         => input(`type` := "hidden", name := f.name, value := f.initialValue)
+  }
+
   implicit class RenderableField(f: FieldLike[_]) {
     def like(r: GroupRenderer.FieldSingleRenderer): FieldWithRenderer = FieldWithRenderer(f, r);
     def like(r: GroupRenderer.FieldDualRenderer): FieldWithDualRenderer = FieldWithDualRenderer(f, r);
+    def hidden: FieldWithRenderer = FieldWithRenderer(f, hiddenRenderer);
   }
   implicit class FieldSetBuilder(repeating: RepeatingSection) {
     def apply(elems: SheetElement*): FieldSet = FieldSet(DefaultFieldSetRenderer(repeating), repeating, elems);
@@ -46,10 +53,10 @@ object SheetImplicits {
   def dualMode[E](e: E)(implicit f: E => SheetElement): DualModeElement = DualModeElement(editOnly(e), presOnly(e));
   def dualMode[E1, E2](e1: E1, e2: E2)(implicit f1: E1 => SheetElement, f2: E2 => SheetElement): DualModeElement = DualModeElement(editOnly(e1), presOnly(e2));
   def roll[E](roll: Button, e: E)(implicit f: E => SheetElement): RollElement = RollElement(roll, e);
-  def roll[E](name: String, chat: ChatCommand, template: TemplateApplication, e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(UIContext, name, Rolls.TemplateRoll(chat, template)), e);
-  def roll[E](name: String, chat: ChatCommand, template: TemplateApplication): Button = Button(UIContext, name, Rolls.TemplateRoll(chat, template));
-  def roll[E](name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication, e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(UIContext, name, Rolls.TemplateRoll(Chat.FromField(chatf), template)), e);
-  def roll[E](name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication): Button = Button(UIContext, name, Rolls.TemplateRoll(Chat.FromField(chatf), template));
+  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication, e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(chat, template)), e);
+  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication): Button = Button(ctx, name, Rolls.TemplateRoll(chat, template));
+  def roll[E](ctx: RenderingContext, name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication, e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template)), e);
+  def roll[E](ctx: RenderingContext, name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication): Button = Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template));
 
   implicit def seqToLabels(labels: Seq[LabelI18N]): LabelsI18N = LabelSeq(labels);
   implicit def labelsToAttrs(labels: LabelsI18N): Modifier = labels.attrs;

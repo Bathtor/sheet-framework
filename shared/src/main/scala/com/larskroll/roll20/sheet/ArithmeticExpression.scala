@@ -34,6 +34,7 @@ trait ArithmeticExpression[T] extends Renderable {
   def *(other: ArithmeticExpression[T])(implicit n: Numeric[T]) = MultExpr[T](this, other);
   def %(other: ArithmeticExpression[T])(implicit n: Numeric[T]) = ModExpr[T](this, other);
 
+  def paren(implicit n: Numeric[T]) = Parenthesised(this);
   def as[N: Numeric](): ArithmeticExpression[N] = CastExpr[T, N](this);
 }
 
@@ -41,6 +42,10 @@ object Arith {
 
   case class Literal[T: Numeric](t: T) extends ArithmeticExpression[T] {
     override def render: String = t.toString();
+  }
+
+  case class Parenthesised[T: Numeric](expr: ArithmeticExpression[T]) extends ArithmeticExpression[T] {
+    def render: String = s"(${expr.render})";
   }
 
   case class PlusExpr[T: Numeric](left: ArithmeticExpression[T], right: ArithmeticExpression[T]) extends ArithmeticExpression[T] {

@@ -309,7 +309,11 @@ case class RollField[T: Numeric](ctx: RenderingContext, attr: String, formula: R
 
 case class Button(ctx: RenderingContext, attr: String, roll: Roll) extends FieldLike[Roll] {
   override def editable(): Boolean = false; // not really relevant
-  override def name: String = s"roll_${attr}";
+  override def name: String = s"roll_${qualifiedAttr}";
   override def initialValue: String = roll.render;
   override def reader: Readable[Roll] = ???; // TODO this is tricky...
+}
+
+case class CommandButton(label: String, button: Button) extends Renderable {
+  override def render: String = s"[$label](~${button.accessor})";
 }
