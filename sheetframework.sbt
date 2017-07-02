@@ -39,6 +39,7 @@ lazy val sheetframework = crossProject.in(file(".")).
     libraryDependencies += "org.rogach" %% "scallop" % "2.1.0",
     libraryDependencies += "com.lihaoyi" %% "upickle" % "0.4.3",
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+    libraryDependencies += "org.codehaus.jettison" % "jettison" % "1.3.8",
     parallelExecution in Test := false,
     logBuffered in Test := false
   ).

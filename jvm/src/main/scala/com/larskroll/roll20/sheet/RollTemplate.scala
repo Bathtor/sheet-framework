@@ -90,6 +90,8 @@ trait RollTemplate extends Renderable {
 
   def any(s: String) = AnyField(s);
 
+  def value[T](s: String) = DirectField[T](s);
+
   def rollable[T: Numeric](s: String) = RollableField[T](s);
 
   def attribute[T](s: String) = AttributeField[T](s);
@@ -178,6 +180,9 @@ trait TemplateField[-T] extends Renderable {
 
 object TemplateFields {
   case class AnyField(name: String) extends TemplateField[Any] {
+  }
+
+  case class DirectField[T](name: String) extends TemplateField[T] {
   }
 
   case class RollableField[T](name: String) extends TemplateField[RollField[T]] {

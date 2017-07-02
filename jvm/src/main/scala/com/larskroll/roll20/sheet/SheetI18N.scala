@@ -54,9 +54,10 @@ trait SheetI18N extends Renderable {
   // TODO dynamic key replacement
 
   override def render(): String = {
+    import org.codehaus.jettison.json.JSONObject;
     val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
     sortedEntries.map {
-      case (k, v) => s"""\"$k\":\"$v\""""
+      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
     }.mkString("{", ",", "}")
   }
 }

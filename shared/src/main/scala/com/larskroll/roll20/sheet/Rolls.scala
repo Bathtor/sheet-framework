@@ -317,3 +317,37 @@ case class Button(ctx: RenderingContext, attr: String, roll: Roll) extends Field
 case class CommandButton(label: String, button: Button) extends Renderable {
   override def render: String = s"[$label](~${button.accessor})";
 }
+
+case class APIButton(label: String, command: Renderable) extends Renderable {
+  override def render: String = s"[$label](!${command.render})";
+}
+
+object APIButton {
+  def from(label: String, formula: RollExpression[Int]): APIButton = {
+    APIButton(label, RollAsAPI(formula))
+  }
+}
+
+/**
+ * Note that this doesn't really work at the moment, as the template doesn't unescape things again, but fails if they are not escaped -.-
+ */
+case class RollAsAPI(formula: RollExpression[Int]) extends Renderable {
+  override def render: String = s"&#13;/roll ${escapedFormula}";
+
+  lazy val escapedFormula: String = {
+    val fS = formula.render;
+    val sb = new StringBuilder();
+    fS.foreach { c =>
+      c match {
+        case '%' => sb.append("&#37;")
+        case ')' => sb.append("&#41;")
+        case '?' => sb.append("&#63;")
+        case '@' => sb.append("&#64;")
+        case '[' => sb.append("&#91;")
+        case ']' => sb.append("&#93;")
+        case _   => sb.append(c)
+      }
+    }
+    sb.toString;
+  }
+}
