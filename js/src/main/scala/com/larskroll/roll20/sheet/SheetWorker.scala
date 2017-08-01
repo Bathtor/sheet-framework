@@ -461,6 +461,57 @@ trait SheetWorker {
     ctx
   }
 
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12],
+    f13: FieldLike[T13], f14: FieldLike[T14]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10);
+      t11 <- attrs(f11);
+      t12 <- attrs(f12);
+      t13 <- attrs(f13);
+      t14 <- attrs(f14)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14), mapper, this);
+    ctx
+  }
+
+  def op[T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15](
+    f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3], f4: FieldLike[T4],
+    f5: FieldLike[T5], f6: FieldLike[T6], f7: FieldLike[T7], f8: FieldLike[T8],
+    f9: FieldLike[T9], f10: FieldLike[T10], f11: FieldLike[T11], f12: FieldLike[T12],
+    f13: FieldLike[T13], f14: FieldLike[T14], f15: FieldLike[T15]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15)] = {
+    val mapper = (attrs: AttributeValues) => for {
+      t1 <- attrs(f1);
+      t2 <- attrs(f2);
+      t3 <- attrs(f3);
+      t4 <- attrs(f4);
+      t5 <- attrs(f5);
+      t6 <- attrs(f6);
+      t7 <- attrs(f7);
+      t8 <- attrs(f8);
+      t9 <- attrs(f9);
+      t10 <- attrs(f10);
+      t11 <- attrs(f11);
+      t12 <- attrs(f12);
+      t13 <- attrs(f13);
+      t14 <- attrs(f14);
+      t15 <- attrs(f15)
+    } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)
+    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15), mapper, this);
+    ctx
+  }
+
   // TODO either do more or figure out the templating thingy
 
   def error(s: String): Unit = {
