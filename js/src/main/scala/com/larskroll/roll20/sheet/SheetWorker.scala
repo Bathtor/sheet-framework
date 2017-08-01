@@ -225,6 +225,10 @@ trait SheetWorker {
     on(s"change:${section.selector}", callback);
   }
 
+  def onRemove(section: RepeatingSection, callback: Function1[Roll20.EventInfo, Unit]): Unit = {
+    on(s"remove:${section.selector}", callback);
+  }
+
   def updateOnChange[T](field: FieldLike[T], mapper: T => T): Unit = {
     val callback = (info: Roll20.EventInfo) => {
       val newValOF = getAttr(field).map(oldValO => oldValO.map(mapper));

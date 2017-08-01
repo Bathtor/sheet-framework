@@ -118,7 +118,8 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
   def default[N](num: N)(implicit n: Numeric[N], r: Readable[N]): NumberField[N] = NumberField(ctx, attr, r, Some(num), editable);
   def options(opts: String*): EnumField = EnumField(ctx, attr, None, opts.toSet, None, editable);
   def options(e: Enumeration): EnumField = EnumField(ctx, attr, None, e.values.map(_.toString).toSet, Some(e), editable);
-  def ref[T](fref: FieldLike[T]): FieldRef[T] = FieldRef(ctx, attr, fref);
+  def ref[T]: FieldRef[T] = FieldRef[T](ctx, attr);
+  def ref[T](fref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, fref);
   override def editable(b: Boolean): VoidField = VoidField(ctx, attr, defaultValue, b);
   def autocalc(expr: AutocalcExpression[String])(implicit dummy: DummyImplicit): AutocalcField[String] = {
     return new AutocalcField(TextField(ctx, this.attr), expr);
@@ -145,17 +146,34 @@ case class NumberField[N: Numeric](ctx: RenderingContext, attr: String, reader: 
   def validIn(min: N, max: N, step: N) = NumberField(ctx, attr, reader, defaultValue, editable, Some(NumberValidity(min, max, step)));
 }
 
-case class FieldRef[T](ctx: RenderingContext, attr: String, ref: FieldLike[T], defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
+case class FieldRefRepeating[T](ctx: RenderingContext, attr: String, ref: FieldLike[T], defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
+
+  type F = FieldRefRepeating[T]
+
+  override def fieldDefault: String = "none";
+  override def reader = FieldImplicits.readableString;
+
+  override def default(s: String): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, ref, Some(s), editable);
+  override def editable(b: Boolean): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, ref, defaultValue, b);
+
+  def valueAt(id: String): String = s"@{${ref.accessor(id)}}";
+  def altExpr: AutocalcExpression[T] = FieldImplicits.fieldToAuto(this).as[T];
+  def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = FieldImplicits.autoToArith(this.altExpr);
+}
+
+case class FieldRef[T](ctx: RenderingContext, attr: String, defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
 
   type F = FieldRef[T]
 
   override def fieldDefault: String = "none";
   override def reader = FieldImplicits.readableString;
 
-  override def default(s: String): FieldRef[T] = FieldRef(ctx, attr, ref, Some(s), editable);
-  override def editable(b: Boolean): FieldRef[T] = FieldRef(ctx, attr, ref, defaultValue, b);
+  override def default(s: String): FieldRef[T] = FieldRef[T](ctx, attr, Some(s), editable);
+  def default(s: FieldLike[T]): FieldRef[T] = FieldRef[T](ctx, attr, Some(valueFrom(s)), editable);
+  override def editable(b: Boolean): FieldRef[T] = FieldRef[T](ctx, attr, defaultValue, b);
 
-  def valueAt(id: String): String = s"@{${ref.accessor(id)}}";
+  def valueFrom(ref: FieldLike[T]): String = s"@{${ref.accessor}}";
+  def valueFrom(ref: FieldLike[T], id: String): String = s"@{${ref.accessor(id)}}";
   def altExpr: AutocalcExpression[T] = FieldImplicits.fieldToAuto(this).as[T];
   def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = FieldImplicits.autoToArith(this.altExpr);
 }
@@ -167,7 +185,8 @@ trait Fields extends RenderingContext {
   def flag(attr: String) = FlagField(this, attr);
   def text(attr: String) = TextField(this, attr);
   def number[T](attr: String)(implicit n: Numeric[T], r: Readable[T]) = NumberField[T](this, attr, r);
-  def fieldRef[T](attr: String, ref: FieldLike[T]): FieldRef[T] = FieldRef(this, attr, ref)
+  def fieldRef[T](attr: String): FieldRef[T] = FieldRef(this, attr);
+  def fieldRef[T](attr: String, ref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(this, attr, ref);
   def field(attr: String) = VoidField(this, attr);
   def button[T](attr: String, roll: RollExpression[T]) = Button(this, attr, Rolls.SimpleRoll(roll));
   def roll[T: Numeric](attr: String, roll: RollExpression[T]) = RollField(this, attr, roll);
