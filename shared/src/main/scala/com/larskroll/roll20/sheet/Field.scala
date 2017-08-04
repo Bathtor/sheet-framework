@@ -120,6 +120,7 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
   def options(e: Enumeration): EnumField = EnumField(ctx, attr, None, e.values.map(_.toString).toSet, Some(e), editable);
   def ref[T]: FieldRef[T] = FieldRef[T](ctx, attr);
   def ref[T](fref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, fref);
+  def expression[T]: ExpressionField[T] = ExpressionField(ctx, attr);
   override def editable(b: Boolean): VoidField = VoidField(ctx, attr, defaultValue, b);
   def autocalc(expr: AutocalcExpression[String])(implicit dummy: DummyImplicit): AutocalcField[String] = {
     return new AutocalcField(TextField(ctx, this.attr), expr);
@@ -178,6 +179,24 @@ case class FieldRef[T](ctx: RenderingContext, attr: String, defaultValue: Option
   def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = FieldImplicits.autoToArith(this.altExpr);
 }
 
+case class ExpressionField[T](ctx: RenderingContext, attr: String, defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
+
+  type F = ExpressionField[T]
+
+  override def fieldDefault: String = "none";
+  override def reader = FieldImplicits.readableString;
+
+  override def default(s: String): ExpressionField[T] = ExpressionField[T](ctx, attr, Some(s), editable);
+  def default(expr: RollExpression[T]): ExpressionField[T] = ExpressionField[T](ctx, attr, Some(expr.render), editable);
+  def default(expr: ArithmeticExpression[T]): ExpressionField[T] = ExpressionField[T](ctx, attr, Some(expr.render), editable);
+  def default(expr: DiceExpression): ExpressionField[Int] = ExpressionField[Int](ctx, attr, Some(expr.render), editable);
+  override def editable(b: Boolean): ExpressionField[T] = ExpressionField[T](ctx, attr, defaultValue, b);
+
+  def valueFrom(r: Renderable): String = r.render;
+  def altExpr: AutocalcExpression[T] = FieldImplicits.fieldToAuto(this).as[T];
+  def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = FieldImplicits.autoToArith(this.altExpr);
+}
+
 trait Fields extends RenderingContext {
 
   val renderingContext: RenderingContext = this;
@@ -188,6 +207,7 @@ trait Fields extends RenderingContext {
   def fieldRef[T](attr: String): FieldRef[T] = FieldRef(this, attr);
   def fieldRef[T](attr: String, ref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(this, attr, ref);
   def field(attr: String) = VoidField(this, attr);
+  def exprField[T](attr: String) = ExpressionField[T](this, attr);
   def button[T](attr: String, roll: RollExpression[T]) = Button(this, attr, Rolls.SimpleRoll(roll));
   def roll[T: Numeric](attr: String, roll: RollExpression[T]) = RollField(this, attr, roll);
 }
