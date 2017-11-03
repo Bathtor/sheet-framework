@@ -28,6 +28,7 @@ input.sheet-toggle-edit-mode:not(:checked)~div .sheet-visibility-hidden-in-prese
     visibility: hidden!important;
 }
 
+input.sheet-toggle-edit-mode:not(:checked)~div .repcontrol,
 input.sheet-toggle-edit-mode:not(:checked)~div .sheet-edit,
 input.sheet-toggle-edit-mode:checked~div .sheet-presentation {
     display: none;
