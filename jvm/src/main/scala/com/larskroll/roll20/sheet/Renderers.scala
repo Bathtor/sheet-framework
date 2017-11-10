@@ -59,7 +59,7 @@ trait GroupRenderer {
 
   def fieldCombiner: FieldCombiner = defaultFieldCombiner;
 
-  def renderChild(f: FieldLike[_], mode: RenderMode): Tag = {
+  def renderField(f: FieldLike[_], mode: RenderMode): Tag = {
     fieldRenderers.applyOrElse((f, mode), defaultFieldRenderer)
   }
 
@@ -68,6 +68,8 @@ trait GroupRenderer {
   }
 
   def renderLabelled(l: LabelsI18N, e: Tag): Tag = div(label(l.attrs), e);
+
+  def renderUnlabelled(e: Tag): Tag = e;
 
   def renderEditWrapper(e: Tag): Tag = {
     span(TabbedStyle.edit, e)
@@ -91,17 +93,23 @@ trait GroupRenderer {
     fieldCombiner(tags)
   }
 
-  protected def renderElement(e: SheetElement, mode: RenderMode): Tag = e match {
-    case TagElement(t)                       => t
-    case FieldElement(f)                     => renderChild(f, mode)
-    case GroupElement(fg)                    => renderChild(fg, mode)
-    case FieldWithRenderer(f, r)             => r(f)
-    case FieldWithDualRenderer(f, r)         => r(f, mode)
-    case LabelledElement(l, e)               => renderLabelled(l, renderElement(e, mode))
-    case EditOnlyElement(e)                  => renderEditWrapper(renderElement(e, RenderMode.Edit))
-    case PresentationOnlyElement(e)          => renderPresentationWrapper(renderElement(e, RenderMode.Presentation))
-    case DualModeElement(edit, presentation) => renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
-    case RollElement(roll, e)                => renderRoll(roll, renderElement(e, mode))
+  protected def renderElement(e: SheetElement, mode: RenderMode, labelled: Boolean = false): Tag = e match {
+    case TagElement(t) if labelled               => t
+    case TagElement(t)                           => renderUnlabelled(t)
+    case FieldElement(f) if labelled             => renderField(f, mode)
+    case FieldElement(f)                         => renderUnlabelled(renderField(f, mode))
+    case GroupElement(fg)                        => renderChild(fg, mode)
+    case FieldWithRenderer(f, r) if labelled     => r(f)
+    case FieldWithRenderer(f, r)                 => renderUnlabelled(r(f))
+    case FieldWithDualRenderer(f, r) if labelled => r(f, mode)
+    case FieldWithDualRenderer(f, r)             => renderUnlabelled(r(f, mode))
+    case LabelledElement(l, e) if labelled       => throw new RuntimeException("Do not put labels within labels!")
+    case LabelledElement(l, e)                   => renderLabelled(l, renderElement(e, mode, true))
+    case EditOnlyElement(e)                      => renderEditWrapper(renderElement(e, RenderMode.Edit))
+    case PresentationOnlyElement(e)              => renderPresentationWrapper(renderElement(e, RenderMode.Presentation))
+    case DualModeElement(edit, presentation)     => renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
+    case RollElement(roll, e) if labelled        => throw new RuntimeException("Do not label rolls!")
+    case RollElement(roll, e)                    => renderRoll(roll, renderElement(e, mode))
   }
 
   val fieldset = tag("fieldset");
