@@ -53,6 +53,7 @@ trait SimpleSheet extends Sheet {
 
 sealed trait SheetElement
 case class TagElement(tag: Tag) extends SheetElement
+case class MarkupElement(elem: SheetElement) extends SheetElement
 case class FieldElement(field: FieldLike[_]) extends SheetElement
 case class GroupElement(group: FieldGroup) extends SheetElement
 case class FieldWithRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldSingleRenderer) extends SheetElement

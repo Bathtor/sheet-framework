@@ -96,6 +96,7 @@ trait GroupRenderer {
   protected def renderElement(e: SheetElement, mode: RenderMode, labelled: Boolean = false): Tag = e match {
     case TagElement(t) if labelled               => t
     case TagElement(t)                           => renderUnlabelled(t)
+    case MarkupElement(e)                        => renderElement(e, mode, true)
     case FieldElement(f) if labelled             => renderField(f, mode)
     case FieldElement(f)                         => renderUnlabelled(renderField(f, mode))
     case GroupElement(fg)                        => renderChild(fg, mode)
