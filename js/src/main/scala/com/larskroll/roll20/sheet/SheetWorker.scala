@@ -38,6 +38,41 @@ case class SheetWorkerAPIException(msg: String) extends Throwable {
 }
 
 @JSExportDescendentObjects
+trait SheetWorkerRoot extends SheetWorker {
+
+  def children: Seq[SheetWorker] = Seq.empty;
+
+  @JSExport
+  def load() {
+    val aggFieldS = children.foldLeft(this.fieldSerialisers)((acc, child) => acc ++ child.fieldSerialisers);
+    val aggTypeS = children.foldLeft(this.typeSerialisers)((acc, child) => acc ++ child.typeSerialisers);
+    this.fieldSerialisers = aggFieldS;
+    this.typeSerialisers = aggTypeS;
+    children.foreach { child =>
+      child.fieldSerialisers = aggFieldS;
+      child.typeSerialisers = aggTypeS;
+    }
+    subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
+      {
+        val (k, callbacks) = t;
+        val f = (e: Roll20.EventInfo) => {
+          callbacks.foreach { c => c(e) }
+        }
+        debug(s"${this.getClass.getName}: subscribing sheetworker on trigger: ${k}.");
+        Roll20.on(k, f);
+      }
+    }
+    children.foreach(_.internal_load());
+    debug("------ Registered Serialisers -------");
+    fieldSerialisers.foreach {
+      case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
+    }
+    typeSerialisers.foreach {
+      case (t, s) => debug(s"${t} -> ${s.getClass.getName}")
+    }
+  }
+}
+
 trait SheetWorker {
   import js.JSConverters._
   import SheetWorkerTypeShorthands._
@@ -48,31 +83,20 @@ trait SheetWorker {
 
   val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]] with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 
-  val fieldSerialisers = new mutable.HashMap[String, Serialiser[Any]];
-  val typeSerialisers = new mutable.HashMap[String, Serialiser[Any]];
+  private[sheet] var fieldSerialisers = Map.empty[String, Serialiser[Any]];
+  private[sheet] var typeSerialisers = Map.empty[String, Serialiser[Any]];
   val defaultSerialiser = DefaultSerialiser;
 
-  def children: Seq[SheetWorker] = Seq.empty;
-
-  @JSExport
-  def load() {
+  private[sheet] def internal_load() {
     subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
       {
         val (k, callbacks) = t;
         val f = (e: Roll20.EventInfo) => {
           callbacks.foreach { c => c(e) }
         }
-        debug(s"Subscribing sheetworker on trigger: ${k}.");
+        debug(s"${this.getClass.getName}: subscribing sheetworker on trigger: ${k}.");
         Roll20.on(k, f);
       }
-    }
-    children.foreach(_.load());
-    debug("------ Registered Serialisers -------");
-    fieldSerialisers.foreach {
-      case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
-    }
-    typeSerialisers.foreach {
-      case (t, s) => debug(s"${t} -> ${s.getClass.getName}")
     }
   }
 
@@ -94,6 +118,8 @@ trait SheetWorker {
       }
     }
   }
+
+  def extractSimpleRowId(id: String): String = id.split('_').last;
 
   def getRowAttrs(section: RepeatingSection, fields: Seq[FieldLike[_]]): Future[Map[String, RowAttributeValues]] = {
     val p = Promise[Map[String, RowAttributeValues]]();
