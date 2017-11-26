@@ -116,6 +116,7 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
   def default(b: Boolean): FlagField = FlagField(ctx, attr, Some(b), editable);
   def default(s: String): TextField = new TextField(ctx, attr, Some(s), editable);
   def default[N](num: N)(implicit n: Numeric[N], r: Readable[N]): NumberField[N] = NumberField(ctx, attr, r, Some(num), editable);
+  def default(cc: ChatCommand): ChatField = ChatField(ctx, attr, Some(cc), editable);
   def options(opts: String*): EnumField = EnumField(ctx, attr, None, opts.toSet, None, editable);
   def options(e: Enumeration): EnumField = EnumField(ctx, attr, None, e.values.map(_.toString).toSet, Some(e), editable);
   def ref[T]: FieldRef[T] = FieldRef[T](ctx, attr);
@@ -197,6 +198,24 @@ case class ExpressionField[T](ctx: RenderingContext, attr: String, defaultValue:
   def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = FieldImplicits.autoToArith(this.altExpr);
 }
 
+case class ChatField(ctx: RenderingContext, attr: String, defaultValue: Option[ChatCommand] = None, editable: Boolean = true) extends Field[ChatCommand] {
+
+  type F = ChatField
+
+  override def fieldDefault: ChatCommand = Chat.Default;
+  override def initialValue: String = {
+    defaultValue match {
+      case Some(t) => t.render;
+      case None    => ""
+    }
+  }
+  override def reader = FieldImplicits.readableChat;
+
+  override def default(cc: ChatCommand): ChatField = ChatField(ctx, attr, Some(cc), editable);
+  override def editable(b: Boolean): ChatField = ChatField(ctx, attr, defaultValue, b);
+
+}
+
 trait Fields extends RenderingContext {
 
   val renderingContext: RenderingContext = this;
@@ -210,4 +229,5 @@ trait Fields extends RenderingContext {
   def exprField[T](attr: String) = ExpressionField[T](this, attr);
   def button[T](attr: String, roll: RollExpression[T]) = Button(this, attr, Rolls.SimpleRoll(roll));
   def roll[T: Numeric](attr: String, roll: RollExpression[T]) = RollField(this, attr, roll);
+  def chat(attr: String) = ChatField(this, attr);
 }
