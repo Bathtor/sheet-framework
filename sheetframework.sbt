@@ -8,7 +8,8 @@ organization in ThisBuild := "com.larskroll.roll20"
 
 version in ThisBuild := "0.4-SNAPSHOT"
 
-scalaVersion in ThisBuild := "2.11.8"
+scalaVersion in ThisBuild := "2.12.4"
+crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.4")
 
 //resolvers += sbt.Resolver.bintrayRepo("denigma", "denigma-releases")
 resolvers += "Apache" at "http://repo.maven.apache.org/maven2"
@@ -25,7 +26,7 @@ lazy val sheetframework = crossProject.in(file(".")).
   enablePlugins(BuildInfoPlugin).
   settings(
     name := "Roll20 Sheet Framework",
-    libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.6.3",
+    libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.6.7",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.0" % "test",
     EclipseKeys.useProjectId := true,
     EclipseKeys.eclipseOutput := Some("./etarget"),
@@ -36,8 +37,8 @@ lazy val sheetframework = crossProject.in(file(".")).
     // Add JVM-specific settings here
     libraryDependencies += "org.scala-js" %% "scalajs-stubs" % scalaJSVersion % "provided",
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1",
-    libraryDependencies += "org.rogach" %% "scallop" % "2.1.0",
-    libraryDependencies += "com.lihaoyi" %% "upickle" % "0.4.3",
+    libraryDependencies += "org.rogach" %% "scallop" % "3.0.0",
+    libraryDependencies += "com.lihaoyi" %% "upickle" % "0.4.4",
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
     libraryDependencies += "org.codehaus.jettison" % "jettison" % "1.3.8",
     parallelExecution in Test := false,
