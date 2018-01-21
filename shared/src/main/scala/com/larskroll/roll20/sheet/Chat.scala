@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 package com.larskroll.roll20.sheet
@@ -75,6 +75,10 @@ object Chat {
 
   case object Default extends ChatCommand {
     override def render: String = " ";
+  }
+
+  case class API(command: String, args: String) extends ChatCommand {
+    override def render: String = s"!$command $args";
   }
 
   case object GM extends ChatCommand {
