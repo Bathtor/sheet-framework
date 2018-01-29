@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 package com.lkroll.roll20.sheet
@@ -30,6 +30,7 @@ import scalatags.Text.all._
 import scalatags.stylesheet._
 import java.io.File
 import scala.io.Source
+import com.lkroll.roll20.sheet.model._
 
 object TestStyle extends SheetStyle {
   initStyleSheet();

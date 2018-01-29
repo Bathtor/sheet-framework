@@ -58,8 +58,8 @@ trait SheetI18N extends Renderable {
     import org.codehaus.jettison.json.JSONObject;
     val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
     sortedEntries.map {
-      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}""" + '\n'
-    }.mkString("{", ",", "}")
+      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+    }.mkString("{", ",\n   ", "}")
   }
 }
 

@@ -30,7 +30,6 @@ import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
 
 object TestSheetModel extends SheetModel {
-  import CoreImplicits._
   import FieldImplicits._
 
   override def version = "0.0.0";
