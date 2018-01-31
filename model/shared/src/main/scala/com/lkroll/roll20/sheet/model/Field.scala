@@ -135,8 +135,8 @@ case class FieldRefRepeating[T](ctx: RenderingContext, attr: String, ref: FieldL
   override def editable(b: Boolean): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, ref, defaultValue, b);
 
   def valueAt(id: String): String = s"@{${ref.accessor(id)}}";
-  def altExpr: AutocalcExpression[T] = CoreImplicits.fieldToAuto(this).as[T];
-  def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
+  def altExpr(implicit labelFields: LabelFields): AutocalcExpression[T] = CoreImplicits.fieldToAutoMaybeLabel(this).as[T];
+  def altArith()(implicit n: Numeric[T], labelFields: LabelFields): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
 }
 
 case class FieldRef[T](ctx: RenderingContext, attr: String, defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
@@ -152,8 +152,8 @@ case class FieldRef[T](ctx: RenderingContext, attr: String, defaultValue: Option
 
   def valueFrom(ref: FieldLike[T]): String = s"@{${ref.accessor}}";
   def valueFrom(ref: FieldLike[T], id: String): String = s"@{${ref.accessor(id)}}";
-  def altExpr: AutocalcExpression[T] = CoreImplicits.fieldToAuto(this).as[T];
-  def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
+  def altExpr(implicit labelFields: LabelFields): AutocalcExpression[T] = CoreImplicits.fieldToAutoMaybeLabel(this).as[T];
+  def altArith()(implicit n: Numeric[T], labelFields: LabelFields): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
 }
 
 case class ExpressionField[T](ctx: RenderingContext, attr: String, defaultValue: Option[String] = None, editable: Boolean = true) extends Field[String] {
@@ -170,8 +170,8 @@ case class ExpressionField[T](ctx: RenderingContext, attr: String, defaultValue:
   override def editable(b: Boolean): ExpressionField[T] = ExpressionField[T](ctx, attr, defaultValue, b);
 
   def valueFrom(r: Renderable): String = r.render;
-  def altExpr: AutocalcExpression[T] = CoreImplicits.fieldToAuto(this).as[T];
-  def altArith()(implicit n: Numeric[T]): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
+  def altExpr(implicit labelFields: LabelFields): AutocalcExpression[T] = CoreImplicits.fieldToAutoMaybeLabel(this).as[T];
+  def altArith()(implicit n: Numeric[T], labelFields: LabelFields): ArithmeticExpression[T] = CoreImplicits.autoToArith(this.altExpr);
 }
 
 case class ChatField(ctx: RenderingContext, attr: String, defaultValue: Option[ChatCommand] = None, editable: Boolean = true) extends Field[ChatCommand] {

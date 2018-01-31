@@ -32,3 +32,9 @@ trait FieldImplicits extends CoreImplicits {
 
 object FieldImplicits extends FieldImplicits {
 }
+object FieldImplicitsLabels extends FieldImplicits {
+  implicit val labelFields: LabelFields = AlwaysLabelFields;
+}
+object FieldImplicitsExplicitLabels extends FieldImplicits {
+  implicit val labelFields: LabelFields = ExplicitlyLabelFields;
+}

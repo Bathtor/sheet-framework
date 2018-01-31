@@ -74,7 +74,7 @@ object SheetImplicits {
     override def render: String = rf.inline.render;
   }
   implicit class FieldRenderable[T](f: Field[T]) extends Renderable {
-    override def render: String = AutocalcExprs.FieldAccess(f).render;
+    override def render: String = AutocalcExprs.FieldAccess(f, false).render;
   }
   implicit def i18nRenderable(l: LabelI18N): DynamicLabel = l.dynamic;
   //implicit def stringTemplateField(s: String): TField = TField(s);
