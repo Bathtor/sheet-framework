@@ -35,4 +35,6 @@ trait SheetModel extends Fields {
   override def mapAccess(rowId: String, s: String): String = s;
   override def mapAccess(s: String): String = s;
   override def mapSelect(s: String): String = s;
+  override def mapMatcher(s: String): String => Boolean = _.equals(s);
+  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
 }

@@ -37,6 +37,17 @@ trait RepeatingSection extends Fields {
   override def mapAccess(rowId: String, s: String): String = s"${RepeatingSection.prefix}${name}_${rowId}_$s";
   override def mapAccess(s: String): String = s"${RepeatingSection.prefix}${name}_$s";
   override def mapSelect(s: String): String = s"${RepeatingSection.prefix}${name}:$s";
+  override def mapMatcher(s: String): String => Boolean = {
+    val pattern = s"""${RepeatingSection.prefix}${name}_[-a-zA-Z0-9]+_$s""".r;
+    (s: String) => s match {
+      case pattern() => true
+      case _         => false
+    }
+  }
+  override def mapMatcher(rowId: String, s: String): String => Boolean = {
+    val pattern = s"""${RepeatingSection.prefix}${name}_${rowId}_$s""";
+    (s: String) => s.equalsIgnoreCase(pattern)
+  }
 
   def at[T](rowId: String, f: FieldLike[T]): FieldAtRow[T] = FieldAtRow(this, rowId, f);
 
@@ -58,6 +69,8 @@ case class ReporderField(section: RepeatingSection) extends FieldLike[Array[Stri
   override def mapAccess(rowId: String, s: String): String = _accessor;
   override def mapAccess(s: String): String = _accessor;
   override def mapSelect(s: String): String = _accessor; // actually the same
+  override def mapMatcher(s: String): String => Boolean = ???; // not sure
+  override def mapMatcher(rowId: String, s: String): String => Boolean = ???; // not sure
 
   def editable(): Boolean = false;
   def ctx: RenderingContext = this;
@@ -81,6 +94,8 @@ case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldL
   override def mapAccess(rowId: String, s: String): String = section.mapAccess(rowId, s);
   override def mapAccess(s: String): String = section.mapAccess(rowId, s);
   override def mapSelect(s: String): String = section.mapSelect(s);
+  override def mapMatcher(s: String): String => Boolean = ???; // not sure
+  override def mapMatcher(rowId: String, s: String): String => Boolean = ???; // not sure
 
   def editable(): Boolean = field.editable();
   def ctx: RenderingContext = this;
