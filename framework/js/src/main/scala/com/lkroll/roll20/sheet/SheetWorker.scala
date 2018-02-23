@@ -87,9 +87,9 @@ trait SheetWorker {
 
   val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]] with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 
-  private[sheet] var fieldSerialisers = Map.empty[String, Serialiser[Any]];
-  private[sheet] var typeSerialisers = List.empty[(Class[Any], Serialiser[Any])];
-  val defaultSerialiser = DefaultSerialiser;
+  private[sheet] var fieldSerialisers = Map.empty[String, JSSerialiser[Any]];
+  private[sheet] var typeSerialisers = List.empty[(Class[Any], JSSerialiser[Any])];
+  val defaultSerialiser = JSDefaultSerialiser;
 
   private[sheet] def internal_load() {
     subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
@@ -104,16 +104,16 @@ trait SheetWorker {
     }
   }
 
-  def register[T](f: FieldLike[T], s: Serialiser[T]) {
-    fieldSerialisers += (f.accessor -> s.asInstanceOf[Serialiser[Any]]); // just throw away the type info
+  def register[T](f: FieldLike[T], s: JSSerialiser[T]) {
+    fieldSerialisers += (f.accessor -> s.asInstanceOf[JSSerialiser[Any]]); // just throw away the type info
   }
 
-  def register[T: reflect.ClassTag](s: Serialiser[T]) {
+  def register[T: reflect.ClassTag](s: JSSerialiser[T]) {
     val staticClass: Class[Any] = reflect.classTag[T].runtimeClass.asInstanceOf[Class[Any]];
-    typeSerialisers ::= (staticClass -> s.asInstanceOf[Serialiser[Any]])
+    typeSerialisers ::= (staticClass -> s.asInstanceOf[JSSerialiser[Any]])
   }
 
-  private def checkTypeHierarchies(cls: Class[_]): Option[Serialiser[Any]] = {
+  private def checkTypeHierarchies(cls: Class[_]): Option[JSSerialiser[Any]] = {
     typeSerialisers.find({
       case (targetCls, ser) => targetCls.isAssignableFrom(cls)
     }).map(_._2)
