@@ -23,22 +23,28 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.sheet
 
-trait SheetModel extends Fields {
-  import FieldImplicits._
+import scala.scalajs.js.Dynamic.{ global => dynGlobal, literal => dynLiteral }
 
-  val versionField = text("version").editable(false);
-  val showOverlay = flag("show_overlay").default(false).editable(false);
-  val closeOverlay = flag("close_overlay").default(true);
-  val processingCount = number[Int]("processing_count").default(0).editable(false);
-  val characterName = text("character_name");
-  def version(): String;
+trait SheetWorkerLogging {
+  def error(s: String): Unit = {
+    log(s"ERROR: ${s}");
+  }
 
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
-  override def mapAccess(rowId: String, s: String): String = s;
-  override def mapAccess(s: String): String = s;
-  override def mapSelect(s: String): String = s;
-  override def mapMatcher(s: String): String => Boolean = _.equals(s);
-  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
+  def error(t: Throwable): Unit = error(t.toString);
+
+  def debug(s: String): Unit = {
+    log(s"DEBUG: ${s}");
+  }
+
+  def info(s: String): Unit = {
+    log(s"INFO: ${s}");
+  }
+
+  def log(s: String): Unit = {
+    dynGlobal.console.log(s);
+  }
 }
+
+object SheetWorkerLogger extends SheetWorkerLogging

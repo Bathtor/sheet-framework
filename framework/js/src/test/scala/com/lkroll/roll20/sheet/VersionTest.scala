@@ -22,23 +22,45 @@
  * SOFTWARE.
  *
  */
+package com.lkroll.roll20.sheet
 
-package com.lkroll.roll20.sheet.model
+import org.scalatest._
+import util.{ Success, Failure }
 
-trait SheetModel extends Fields {
-  import FieldImplicits._
+class VersionTest extends FunSuite with Matchers {
+  test("Simple version parsing") {
+    val s = "1.2.3";
+    SemanticVersion.fromString(s) match {
+      case Success(v) => {
+        v.major should be (1);
+        v.minor should be (2);
+        v.patch should be (3);
+        v.snapshot should be (false);
+      }
+      case Failure(e) => fail(e)
+    }
+  }
 
-  val versionField = text("version").editable(false);
-  val showOverlay = flag("show_overlay").default(false).editable(false);
-  val closeOverlay = flag("close_overlay").default(true);
-  val processingCount = number[Int]("processing_count").default(0).editable(false);
-  val characterName = text("character_name");
-  def version(): String;
+  test("Version with broken snapshot parsing") {
+    val s = "1.2.3-SNAP";
+    SemanticVersion.fromString(s) match {
+      case Success(v) => {
+        fail("-SNAP is not a valid semantic version!")
+      }
+      case Failure(_) => succeed
+    }
+  }
 
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
-  override def mapAccess(rowId: String, s: String): String = s;
-  override def mapAccess(s: String): String = s;
-  override def mapSelect(s: String): String = s;
-  override def mapMatcher(s: String): String => Boolean = _.equals(s);
-  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
+  test("Version with snapshot parsing") {
+    val s = "1.2.3-SNAPSHOT";
+    SemanticVersion.fromString(s) match {
+      case Success(v) => {
+        v.major should be (1);
+        v.minor should be (2);
+        v.patch should be (3);
+        v.snapshot should be (true);
+      }
+      case Failure(e) => fail(e)
+    }
+  }
 }

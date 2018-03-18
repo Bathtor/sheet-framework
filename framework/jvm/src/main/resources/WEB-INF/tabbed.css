@@ -101,3 +101,21 @@ input.sheet-toggle-edit-mode:checked~div textarea {
   padding: 0 3px;
   text-align: center;
 }
+
+.sheet-show-modoverlay:not([value='false'])~.sheet-modoverlay {
+    display: block;
+}
+
+.sheet-modoverlay {
+    background-color: ${overlay-background};
+    color: ${overlay-text};
+    display: none;
+    height: 100%;
+    left: 0;
+    padding: 2px;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 99999;
+    text-align: center;
+}

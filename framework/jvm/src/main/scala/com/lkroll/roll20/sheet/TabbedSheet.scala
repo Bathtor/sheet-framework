@@ -25,6 +25,7 @@
 
 package com.lkroll.roll20.sheet
 
+import com.lkroll.roll20.sheet.model.SheetModel
 import scalatags.Text.all._
 import scalatags.stylesheet._
 import java.io.File
@@ -48,6 +49,21 @@ trait TabbedSheet extends Sheet {
   def pageToggle = input(`type` := "hidden", TabbedStyle.pageToggle, name := "attr_tab", value := 0)
 
   val tabbedStyle = this.getClass.getClassLoader.getResource("WEB-INF/tabbed.css");
+  val tt = TabbedI18N;
+  val model = TabbedModel;
+
+  val modOverlay = div(
+    TabbedStyle.modoverlay,
+    p(
+      span(tt.processing),
+      span(raw(" ")),
+      input(`type` := "hidden", name := model.processingCount.name, value := model.processingCount.initialValue),
+      span(name := model.processingCount.name)),
+    p(tt.doNotClose),
+    p(label(
+      TabbedStyle.pseudoButtonWrapper,
+      input(`type` := "checkbox", name := model.closeOverlay.name, value := model.closeOverlay.initialValue, checked := "checked"),
+      span(tt.closeOverlay))));
 
   override def render(): String = {
     val hiddenGroup = HiddenGroup(hidden);
@@ -58,6 +74,8 @@ trait TabbedSheet extends Sheet {
     val pages = tabs.map(_.render());
     val sheetString = div(
       TabbedStyle.wrapper,
+      input(`type` := "hidden", name := model.showOverlay.name, value := model.showOverlay.initialValue, TabbedStyle.`show-modoverlay`),
+      modOverlay,
       hiddenGroup.render(),
       input(`type` := "checkbox", name := "attr_edit_mode", `class` := "sheet-toggle-edit-mode sheet-hidden"),
       header.render(),
@@ -78,7 +96,7 @@ trait TabbedSheet extends Sheet {
     });
     (es ++ (tabStyle :: List(TabbedStyle, style).map(_.styleSheetText))).mkString("\n")
   };
-  override def renderTranslation(): String = translation.render;
+  override def renderTranslation(): String = (TabbedI18N ++ translation).render;
 
   private var tabCount = 0;
 
@@ -103,6 +121,16 @@ case class Tab(id: Int, labeli18n: LabelsI18N, renderer: GroupRenderer, members:
     renderer.render(this, mode));
 }
 
+object TabbedModel extends SheetModel {
+  override def version(): String = "";
+}
+
+object TabbedI18N extends SheetI18N {
+  val processing = text("sheet-processing", "Processing");
+  val doNotClose = text("sheet-do-not-close", "Do not close the sheet while its processing.");
+  val closeOverlay = text("close-overlay", "Close");
+}
+
 object TabbedStyle extends CascadingStyleSheet {
   initStyleSheet();
   override def customSheetName = Some("sheet"); // required by roll20
@@ -112,7 +140,8 @@ object TabbedStyle extends CascadingStyleSheet {
 
   val wrapper = cls(
     fontSize := "12px",
-    minWidth := "24rem");
+    minWidth := "24rem",
+    position.relative);
 
   val pictos = cls(
     fontFamily := "Pictos",
@@ -128,6 +157,11 @@ object TabbedStyle extends CascadingStyleSheet {
   val presentation = cls();
 
   val pseudoButtonWrapper = cls();
+
+  val modoverlay = cls();
+  val `show-modoverlay` = cls();
+
+  //val centreText = cls(textAlign.center);
 
   //  val pseudoButtonWrapper = cls(
   //    cursor.pointer,

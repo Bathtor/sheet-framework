@@ -61,6 +61,11 @@ trait SheetI18N extends Renderable {
       case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
     }.mkString("{", ",\n   ", "}")
   }
+
+  def ++(other: SheetI18N): SheetI18NList = other match {
+    case SheetI18NList(trs) => SheetI18NList(this :: trs)
+    case _                  => SheetI18NList(List(this, other))
+  }
 }
 
 object SheetI18N {
@@ -72,6 +77,23 @@ object SheetI18N {
   val datai18nPlaceholder = attr("data-i18n-placeholder");
   private[sheet] val strAttr = genericAttr[String];
   val datai18nDynamic = attr("data-i18n-dynamic").empty;
+}
+
+case class SheetI18NList(translations: List[SheetI18N]) extends SheetI18N {
+  override def render(): String = {
+    import org.codehaus.jettison.json.JSONObject;
+    val sortedEntries = translations.foldLeft(scala.collection.immutable.TreeMap.empty[String, String]) {
+      case (acc, t) => acc ++ t.entries
+    };
+    //= scala.collection.immutable.TreeMap(entries.toArray: _*)
+    sortedEntries.map {
+      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+    }.mkString("{", ",\n   ", "}")
+  }
+  override def ++(other: SheetI18N): SheetI18NList = other match {
+    case SheetI18NList(trs) => SheetI18NList(this.translations ++ trs)
+    case _                  => SheetI18NList(this.translations ++ List(other))
+  }
 }
 
 import SheetI18N._
