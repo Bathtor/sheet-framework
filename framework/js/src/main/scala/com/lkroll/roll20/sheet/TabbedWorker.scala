@@ -50,9 +50,9 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
   }
 
   val decrementProcessing = op(model.processingCount) { oI: Option[Int] =>
-    debug("Wasting some time.");
-    val r = 0.to(1000000000).product; // waste some time
-    debug(s"Done wasting some time $r.");
+    //    debug("Wasting some time.");
+    //    val r = 0.to(1000000000).product; // waste some time
+    //    debug(s"Done wasting some time $r.");
     oI match {
       case Some(count) => setAttrs(Map(model.processingCount <<= count - 1))
       case None        => setAttrs(Map(model.processingCount <<= 0))

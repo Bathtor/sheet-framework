@@ -102,7 +102,7 @@ input.sheet-toggle-edit-mode:checked~div textarea {
   text-align: center;
 }
 
-.sheet-show-modoverlay:not([value='false'])~.sheet-modoverlay {
+.sheet-show-modoverlay:not([value='0'])~.sheet-modoverlay {
     display: block;
 }
 

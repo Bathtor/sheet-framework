@@ -4,7 +4,7 @@ name := "Roll20 Sheet Model Root"
 
 organization in ThisBuild := "com.lkroll.roll20"
 
-version in ThisBuild := "0.8.0-SNAPSHOT"
+version in ThisBuild := "0.8.1-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.12.4"
 crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.4")
@@ -23,7 +23,7 @@ lazy val root = project.in(file(".")).
 lazy val sheetModel = crossProject.in(file(".")).
   settings(
     name := "Roll20 Sheet Model",
-    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.11.0-SNAPSHOT",
+    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.12.0-SNAPSHOT",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.4" % "test",
     EclipseKeys.useProjectId := true,
     EclipseKeys.eclipseOutput := Some("./etarget")
