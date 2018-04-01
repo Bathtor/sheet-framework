@@ -50,8 +50,10 @@ object SheetImplicits {
   }
   implicit def pairToLabelledElement[E](p: Tuple2[LabelsI18N, E])(implicit f: E => SheetElement): LabelledElement = LabelledElement(p._1, p._2);
 
-  def editOnly[E](e: E)(implicit f: E => SheetElement): EditOnlyElement = EditOnlyElement(e);
-  def presOnly[E](e: E)(implicit f: E => SheetElement): PresentationOnlyElement = PresentationOnlyElement(e);
+  def editOnly[E](e: E)(implicit f: E => SheetElement): EditOnlyElement = EditOnlyElement(Seq(e));
+  def editOnly(elems: SheetElement*): EditOnlyElement = EditOnlyElement(elems);
+  def presOnly[E](e: E)(implicit f: E => SheetElement): PresentationOnlyElement = PresentationOnlyElement(Seq(e));
+  def presOnly(elems: SheetElement*): PresentationOnlyElement = PresentationOnlyElement(elems);
   def dualMode[E](e: E)(implicit f: E => SheetElement): DualModeElement = DualModeElement(editOnly(e), presOnly(e));
   def dualMode[E1, E2](e1: E1, e2: E2)(implicit f1: E1 => SheetElement, f2: E2 => SheetElement): DualModeElement = DualModeElement(editOnly(e1), presOnly(e2));
   def roll[E](roll: Button, e: E)(implicit f: E => SheetElement): RollElement = RollElement(roll, e);

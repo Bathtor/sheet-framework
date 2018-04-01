@@ -61,8 +61,8 @@ case class GroupElement(group: FieldGroup) extends SheetElement
 case class FieldWithRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldSingleRenderer) extends SheetElement
 case class FieldWithDualRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldDualRenderer) extends SheetElement
 case class LabelledElement(l: LabelsI18N, elem: SheetElement) extends SheetElement
-case class EditOnlyElement(elem: SheetElement) extends SheetElement
-case class PresentationOnlyElement(elem: SheetElement) extends SheetElement
+case class EditOnlyElement(elem: Seq[SheetElement]) extends SheetElement
+case class PresentationOnlyElement(elem: Seq[SheetElement]) extends SheetElement
 case class DualModeElement(edit: SheetElement, presentation: SheetElement) extends SheetElement
 case class RollElement(roll: Button, child: SheetElement) extends SheetElement
 

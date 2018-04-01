@@ -29,7 +29,6 @@ import scalatags.Text.all._
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
 
-
 object GroupRenderer {
   type FieldRenderer = PartialFunction[(FieldLike[_], RenderMode), Tag];
   type FieldSingleRenderer = Function[FieldLike[_], Tag];
@@ -74,11 +73,11 @@ trait GroupRenderer {
 
   def renderUnlabelled(e: Tag): Tag = e;
 
-  def renderEditWrapper(e: Tag): Tag = {
+  def renderEditWrapper(e: Seq[Tag]): Tag = {
     span(TabbedStyle.edit, e)
   }
 
-  def renderPresentationWrapper(e: Tag): Tag = {
+  def renderPresentationWrapper(e: Seq[Tag]): Tag = {
     span(TabbedStyle.presentation, e)
   }
 
@@ -109,8 +108,8 @@ trait GroupRenderer {
     case FieldWithDualRenderer(f, r)             => renderUnlabelled(r(f, mode))
     case LabelledElement(l, e) if labelled       => throw new RuntimeException("Do not put labels within labels!")
     case LabelledElement(l, e)                   => renderLabelled(l, renderElement(e, mode, true))
-    case EditOnlyElement(e)                      => renderEditWrapper(renderElement(e, RenderMode.Edit))
-    case PresentationOnlyElement(e)              => renderPresentationWrapper(renderElement(e, RenderMode.Presentation))
+    case EditOnlyElement(es)                     => renderEditWrapper(es.map(renderElement(_, RenderMode.Edit)))
+    case PresentationOnlyElement(es)             => renderPresentationWrapper(es.map(renderElement(_, RenderMode.Presentation)))
     case DualModeElement(edit, presentation)     => renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
     case RollElement(roll, e) if labelled        => throw new RuntimeException("Do not label rolls!")
     case RollElement(roll, e)                    => renderRoll(roll, renderElement(e, mode))
