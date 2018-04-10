@@ -6,7 +6,7 @@ name := "Roll20 Sheet Framework Root"
 
 organization in ThisBuild := "com.lkroll.roll20"
 
-version in ThisBuild := "0.9.0-SNAPSHOT"
+version in ThisBuild := "0.9.1-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.12.4"
 crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.4")
@@ -27,7 +27,7 @@ lazy val sheetframework = crossProject.in(file(".")).
   settings(
     name := "Roll20 Sheet Framework",
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.6.+",
-    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.12.0-SNAPSHOT",
+    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.12.+",
     libraryDependencies += "com.lkroll.roll20" %%% "roll20-sheet-model" % version.value,
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.4" % "test",
     EclipseKeys.useProjectId := true,

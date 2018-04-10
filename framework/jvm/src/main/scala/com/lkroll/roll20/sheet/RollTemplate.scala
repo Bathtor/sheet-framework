@@ -70,7 +70,7 @@ trait RollTemplate extends Renderable {
 
   def allPropsS(except: String*): AllProps = AllProps(except);
 
-  def allProps(except: TemplateField[Any]*): AllProps = AllProps(except.map(_.name));
+  def allProps(except: TemplateField[Nothing]*): AllProps = AllProps(except.map(_.name));
 
   def rollWasCrit[T](f: TemplateField[RollField[T]]) = RollWasCrit(f);
 
@@ -108,7 +108,7 @@ object RollTemplate {
 
   case class AllProps(exceptions: Seq[String]) {
     def apply(mapper: (TemplateField[Any], TemplateField[Any]) => Modifier): Modifier = {
-      val helper = s"allProps() ${exceptions.mkString(" ")}";
+      val helper = s"allprops() ${exceptions.mkString(" ")}";
       val start = raw(s"{{#${helper}}}");
       val end = raw(s"{{/${helper}}}");
       Seq[Modifier](start, mapper(KeyField, ValueField), end)
