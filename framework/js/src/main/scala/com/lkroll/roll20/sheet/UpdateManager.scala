@@ -40,10 +40,22 @@ trait UpdateManager extends SheetWorker {
       case (v) => Seq(newField <<= v, oldField <<= oldField.resetValue)
     }
   }
+  def nameChangeRepeating[T](section: RepeatingSection, oldField: Field[T], newField: Field[T]): SheetWorkerOp = {
+    val secOp = op(oldField) update {
+      case (v) => Seq(newField <<= v, oldField <<= oldField.resetValue)
+    };
+    secOp.all(section)
+  }
   def typeChange[I, O](oldField: Field[I], newField: Field[O])(mapper: I => O): SheetWorkerOp = {
     op(oldField) update {
       case (v) => Seq(newField <<= mapper(v))
     }
+  }
+  def typeChangeRepeating[I, O](section: RepeatingSection, oldField: Field[I], newField: Field[O])(mapper: I => O): SheetWorkerOp = {
+    val secOp = op(oldField) update {
+      case (v) => Seq(newField <<= mapper(v))
+    };
+    secOp.all(section)
   }
 }
 
