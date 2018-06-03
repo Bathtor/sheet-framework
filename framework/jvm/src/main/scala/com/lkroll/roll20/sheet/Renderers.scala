@@ -28,6 +28,7 @@ package com.lkroll.roll20.sheet
 import scalatags.Text.all._
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
+import com.lkroll.roll20.sheet.tabbed.TabbedStyle
 
 object GroupRenderer {
   type FieldRenderer = PartialFunction[(FieldLike[_], RenderMode), Tag];

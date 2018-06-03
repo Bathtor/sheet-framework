@@ -23,13 +23,15 @@
  *
  */
 
-package com.lkroll.roll20.sheet
+package com.lkroll.roll20.sheet.tabbed
 
 import com.lkroll.roll20.sheet.model.SheetModel
+import com.lkroll.roll20.sheet.model.tabbed.TabbedI18N
 import scalatags.Text.all._
 import scalatags.stylesheet._
-import java.io.File
 import java.net.URL
+import com.lkroll.roll20.sheet._
+import scala.collection.Seq
 
 trait TabbedSheet extends Sheet {
 
@@ -43,13 +45,13 @@ trait TabbedSheet extends Sheet {
   def style(): StyleSheet;
   def colourScheme: ColourScheme;
   def externalStyles: List[URL] = List();
-  def translation(): SheetI18N;
+  def translation(): SheetI18NDefaults;
   def templates: List[RollTemplate] = List();
 
   def pageToggle = input(`type` := "hidden", TabbedStyle.pageToggle, name := "attr_tab", value := 0)
 
   val tabbedStyle = this.getClass.getClassLoader.getResource("WEB-INF/tabbed.css");
-  val tt = TabbedI18N;
+  val tt = TabbedI18NDefaults;
   val model = TabbedModel;
 
   val modOverlay = div(
@@ -96,7 +98,7 @@ trait TabbedSheet extends Sheet {
     });
     (es ++ (tabStyle :: List(TabbedStyle, style).map(_.styleSheetText))).mkString("\n")
   };
-  override def renderTranslation(): String = (TabbedI18N ++ translation).render;
+  override def renderTranslation(): String = (TabbedI18NDefaults ++ translation).render;
 
   private var tabCount = 0;
 
@@ -125,10 +127,11 @@ object TabbedModel extends SheetModel {
   override def version(): String = "";
 }
 
-object TabbedI18N extends SheetI18N {
-  val processing = text("sheet-processing", "Processing");
-  val doNotClose = text("sheet-do-not-close", "Do not close the sheet while its processing.");
-  val closeOverlay = text("close-overlay", "Close");
+object TabbedI18NDefaults extends SheetI18NDefaults {
+  val keys = TabbedI18N;
+  val processing = keys.processing <~ "Processing";
+  val doNotClose = keys.doNotClose <~ "Do not close the sheet while its processing.";
+  val closeOverlay = keys.closeOverlay <~ "Close";
 }
 
 object TabbedStyle extends CascadingStyleSheet {

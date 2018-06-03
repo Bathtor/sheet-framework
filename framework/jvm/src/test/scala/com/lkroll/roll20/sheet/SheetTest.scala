@@ -31,6 +31,7 @@ import scalatags.stylesheet._
 import java.io.File
 import scala.io.Source
 import com.lkroll.roll20.sheet.model._
+import com.lkroll.roll20.sheet.model.SheetI18N
 
 object TestStyle extends SheetStyle {
   initStyleSheet();
@@ -58,13 +59,19 @@ object TestSheetModel extends SheetModel {
 }
 
 object Testi18n extends SheetI18N {
-  val test = text("test", "Test");
-  val skillMod = text("skillmod", "Skill Modifier");
+  val test = text("test");
+  val skillMod = text("skillmod");
+}
+
+object Testi18nDefaults extends SheetI18NDefaults {
+  val keys = Testi18n;
+  val test = keys.test <~ "Test";
+  val skillMod = keys.skillMod <~ "Skill Modifier";
 }
 
 object TestSheet extends SimpleSheet {
   val m = TestSheetModel;
-  val t = Testi18n;
+  val t = Testi18nDefaults;
 
   import SheetImplicits._
   import Roll20Predef._
@@ -75,14 +82,14 @@ object TestSheet extends SimpleSheet {
     m.strMod,
     m.strSave,
     skillGroup,
-    m.test like { tf => span(name := tf.name, SheetI18N.datai18nDynamic) });
+    m.test like { tf => span(name := tf.name, SheetI18NAttrs.datai18nDynamic) });
 
   val skillGroup = m.skills(
     label(t.skillMod),
     m.skills.mod);
 
   override def style(): StyleSheet = TestStyle;
-  override def translation(): SheetI18N = Testi18n;
+  override def translation(): SheetI18NDefaults = Testi18nDefaults;
 }
 
 class SheetTest extends FunSuite with Matchers {

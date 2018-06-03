@@ -40,7 +40,7 @@ trait SimpleSheet extends Sheet {
   def main(): FieldGroup;
   def style(): StyleSheet;
   def externalStyles: Seq[URL] = Seq();
-  def translation(): SheetI18N;
+  def translation(): SheetI18NDefaults;
   override def render(): String = main.render().render;
   override def renderStyle(): String = {
     val es = externalStyles.map(styleURL => {

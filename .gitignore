@@ -37,3 +37,6 @@ etarget/
 *.sublime-project
 
 .DS_Store
+
+# Temp
+macros/
