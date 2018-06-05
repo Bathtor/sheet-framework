@@ -335,4 +335,13 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
     def silent(option: Boolean) = if (option) silentTrue else silentFalse;
   }
 
+  def getTranslationByKey(key: String): Option[String] = {
+    Roll20.getTranslationByKey(key).asInstanceOf[Any] match {
+      case false     => None
+      case s: String => Some(s)
+    }
+  }
+
+  def getTranslationLanguage(): String = Roll20.getTranslationLanguage();
+
 }
