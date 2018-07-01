@@ -40,15 +40,19 @@ input.sheet-toggle-edit-mode:checked+span.sheet-toggle-edit-mode {
     color: ${toggle-checked-text};
 }
 
+input.sheet-toggle-edit-mode {
+  margin-top: 0px;
+}
+
 span.sheet-toggle-edit-mode {
     text-shadow: -1px 0 ${text-shadow}, 0 1px ${text-shadow}, 1px 0 ${text-shadow}, 0 -1px ${text-shadow};
     background-color: transparent;
     color: ${toggle-span-text};
-    font-size: 20px;
+    font-size: 1.5rem;
     margin-top: 0px;
-    margin-left: -23px;
-    width: 23px;
-    height: 20px;
+    margin-left: -2.3rem;
+    width: 2.3rem;
+    height: 2rem;
     cursor: pointer;
     border-radius: 3px;
     display: inline-block;
@@ -64,13 +68,13 @@ input.sheet-toggle-edit-mode {
     position: relative;
     z-index: 200;
     vertical-align: top;
-    height: 20px;
+    height: 2rem;
     background-color: transparent;
     color: ${toggle-input-text};
-    font-size: 12px;
+    font-size: 1.2rem;
     padding: 0;
-    margin-top: -6px;
-    width: 23px;
+    margin-top: -0.6rem;
+    width: 2.3rem;
 }
 
 input.sheet-toggle-edit-mode:checked~div input,

@@ -148,13 +148,13 @@ object TabbedStyle extends CascadingStyleSheet {
 
   val pictos = cls(
     fontFamily := "Pictos",
-    fontSize := "13px");
+    fontSize := "1.3rem");
 
   val `toggle-edit-mode` = cls(
-    height := "20px");
+    height := "2rem");
 
   val `mar-l-lg` = cls(
-    marginLeft := "10px");
+    marginLeft := "1rem");
 
   val edit = cls();
   val presentation = cls();
