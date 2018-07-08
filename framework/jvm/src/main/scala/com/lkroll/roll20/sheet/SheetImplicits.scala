@@ -61,6 +61,7 @@ object SheetImplicits {
   def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication): Button = Button(ctx, name, Rolls.TemplateRoll(chat, template));
   def roll[E](ctx: RenderingContext, name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication, e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template)), e);
   def roll[E](ctx: RenderingContext, name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication): Button = Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template));
+  def roll[E](ctx: RenderingContext, name: String, cmd: String, args: List[(String, Renderable)], e: E)(implicit f: E => SheetElement): RollElement = RollElement(Button(ctx, name, Rolls.APIRoll(cmd, args)), e);
 
   implicit def seqToLabels(labels: Seq[LabelI18N]): LabelsI18N = LabelSeq(labels);
   implicit def labelsToAttrs(labels: LabelsI18N): Modifier = labels.attrs;

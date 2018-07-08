@@ -46,12 +46,13 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
   }
 
   def setProcessing(count: Int) = nop { _: Option[Unit] =>
+    //debug(s"Setting processing count=$count");
     setAttrs(Map(model.processingCount <<= count))
   }
 
   val decrementProcessing = op(model.processingCount) { oI: Option[Int] =>
     //    debug("Wasting some time.");
-    //    val r = 0.to(1000000000).product; // waste some time
+    //    val r = 0.to(100000000).product; // waste some time
     //    debug(s"Done wasting some time $r.");
     oI match {
       case Some(count) => setAttrs(Map(model.processingCount <<= count - 1))
@@ -79,13 +80,14 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
             _ <- {
               val updates = manager.update(v, model.version);
               val count = updates.size;
+              //debug(s"Got $count updates to process.");
               val updatesProcessing = setProcessing(count) :: updates.flatMap(op => List(op, decrementProcessing));
-              SheetWorkerOpChain(updatesProcessing)()
+              val op = SheetWorkerOpChain(updatesProcessing);
+              //debug(s"Got update ops: ${op}");
+              op()
             };
             _ <- deactivateOverlay()
           } yield ()
-          //          // TODO update mechanism
-          //          setAttrs(Map(versionField <<= version, characterSheet <<= s"$sheetName v$version"))
         }
       }
       case _ => {

@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 package com.lkroll.roll20.sheet
@@ -380,16 +380,17 @@ object SheetWorkerOpChain {
       ops.head match {
         case Merged(moc)      => moc
         case Unmerged(wo)     => wo
-        case SideEffecting(_) => ??? // this chase shouldn't happen (would be easy to recover from, but I prefer to find the bug)
+        case SideEffecting(_) => ??? // this case shouldn't happen (would be easy to recover from, but I prefer to find the bug)
       }
     } else {
       ChainedOpChain(sheet, ops)
     }
   }
 
-  @tailrec private def leftDescend(sheet: SheetWorker,
-                                   acc: List[ChainOperation],
-                                   rest: List[SheetWorkerOp]): List[ChainOperation] = {
+  @tailrec private def leftDescend(
+    sheet: SheetWorker,
+    acc:   List[ChainOperation],
+    rest:  List[SheetWorkerOp]): List[ChainOperation] = {
     rest match {
       case h :: r => h match {
         case se: SideEffectingSheetWorkerOp[_]    => leftDescend(sheet, SideEffecting(se) :: acc, r)
@@ -402,10 +403,11 @@ object SheetWorkerOpChain {
     }
   }
 
-  @tailrec private def rightDescend(sheet: SheetWorker,
-                                    wacc: List[WritingSheetWorkerOp[_]],
-                                    acc: List[ChainOperation],
-                                    rest: List[SheetWorkerOp]): List[ChainOperation] = {
+  @tailrec private def rightDescend(
+    sheet: SheetWorker,
+    wacc:  List[WritingSheetWorkerOp[_]],
+    acc:   List[ChainOperation],
+    rest:  List[SheetWorkerOp]): List[ChainOperation] = {
     rest match {
       case h :: r => h match {
         case se: SideEffectingSheetWorkerOp[_]    => leftDescend(sheet, SideEffecting(se) :: Merged(MergedOpChain(sheet, wacc.reverse)) :: acc, r)
