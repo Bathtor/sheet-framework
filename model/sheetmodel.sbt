@@ -4,7 +4,7 @@ name := "Roll20 Sheet Model Root"
 
 organization in ThisBuild := "com.lkroll.roll20"
 
-version in ThisBuild := "0.10.3-SNAPSHOT"
+version in ThisBuild := "0.10.4-SNAPSHOT"
 
 scalaVersion in ThisBuild := "2.12.4"
 crossScalaVersions in ThisBuild := Seq("2.11.11", "2.12.4")
