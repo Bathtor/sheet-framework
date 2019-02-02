@@ -29,6 +29,7 @@ import scalajs.js
 import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
 import concurrent.{ Future, Promise, ExecutionContext }
+import util.{ Try, Success, Failure }
 
 case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends SheetWorker {
 
@@ -46,7 +47,7 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
   }
 
   def setProcessing(count: Int) = nop { _: Option[Unit] =>
-    //debug(s"Setting processing count=$count");
+    debug(s"Setting processing count=$count");
     setAttrs(Map(model.processingCount <<= count))
   }
 
@@ -54,9 +55,16 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
     //    debug("Wasting some time.");
     //    val r = 0.to(100000000).product; // waste some time
     //    debug(s"Done wasting some time $r.");
+
     oI match {
-      case Some(count) => setAttrs(Map(model.processingCount <<= count - 1))
-      case None        => setAttrs(Map(model.processingCount <<= 0))
+      case Some(count) => {
+        debug(s"Decrementing count=$count");
+        setAttrs(Map(model.processingCount <<= count - 1))
+      }
+      case None => {
+        debug("Could not read count, setting to 0");
+        setAttrs(Map(model.processingCount <<= 0))
+      }
     }
   }
 
@@ -75,19 +83,28 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
           Future.successful(())
         } else {
           log(s"Loaded sheet with version $v < ${model.version}");
-          for {
+          val f = for {
             _ <- activateOverlay();
             _ <- {
               val updates = manager.update(v, model.version);
               val count = updates.size;
-              //debug(s"Got $count updates to process.");
+              debug(s"Got $count updates to process.");
               val updatesProcessing = setProcessing(count) :: updates.flatMap(op => List(op, decrementProcessing));
+              debug(s"Got update processing: ${updatesProcessing}");
               val op = SheetWorkerOpChain(updatesProcessing);
-              //debug(s"Got update ops: ${op}");
+              debug(s"Got update ops: ${op}");
               op()
             };
             _ <- deactivateOverlay()
-          } yield ()
+          } yield ();
+          f.onComplete{
+            case Success(_) => debug("Update completed fine.");
+            case Failure(e) => {
+              debug(s"Updated failed with ${e.getMessage}:");
+              error(e.getStackTrace.mkString("\n"));
+            }
+          }
+          f
         }
       }
       case _ => {
