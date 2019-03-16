@@ -35,7 +35,6 @@ trait RollTemplate extends Renderable {
 
   def name: String;
   def content: Tag;
-  val rolltemplate = tag("rolltemplate");
   override def render: String = rolltemplate(`class` := s"sheet-rolltemplate-${name}", content).render;
   def apply(data: (TemplateField[Nothing], Renderable)*): TemplateApplication = MapTemplateApplication(this, data.toMap);
 
@@ -105,6 +104,8 @@ trait RollTemplate extends Renderable {
 
 object RollTemplate {
   import TemplateFields._
+
+  val rolltemplate = tag("rolltemplate");
 
   case class AllProps(exceptions: Seq[String]) {
     def apply(mapper: (TemplateField[Any], TemplateField[Any]) => Modifier): Modifier = {

@@ -22,24 +22,27 @@
  * SOFTWARE.
  *
  */
-
 package com.lkroll.roll20.sheet.model
 
-trait SheetModel extends Fields {
-  import FieldImplicits._
+import com.lkroll.roll20.core.{ TemplateCoreImplicits, TemplateRef }
 
-  val versionField = text("version").editable(false);
-  val showOverlay = flag("show_overlay").default(false).editable(false);
-  val closeOverlay = flag("close_overlay").default(true);
-  val processingCount = number[Int]("processing_count").default(0).editable(false);
-  val characterName = text("character_name");
-  def version(): String;
-  def outputTemplate: Option[APIOutputTemplate];
-
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
-  override def mapAccess(rowId: String, s: String): String = s;
-  override def mapAccess(s: String): String = s;
-  override def mapSelect(s: String): String = s;
-  override def mapMatcher(s: String): String => Boolean = _.equals(s);
-  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
+trait APIOutputTemplate extends TemplateCoreImplicits {
+  def ref: TemplateRef;
+  val fields = APIOutputTemplate.Fields;
 }
+object APIOutputTemplate {
+  private def value[T](name: String): TemplateField[T] = TemplateField(name);
+
+  object Fields {
+    val titleField = value[String]("title");
+    val contentField = value[String]("content");
+
+    val showHeader = value[Boolean]("show_header");
+    val showFooter = value[Boolean]("show_footer");
+
+    val isWarning = value[Boolean]("is_warning");
+    val isError = value[Boolean]("is_error");
+  }
+}
+
+case class TemplateField[T](name: String);

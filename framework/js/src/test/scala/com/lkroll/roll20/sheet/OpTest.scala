@@ -33,6 +33,7 @@ object TestSheetModel extends SheetModel {
   import FieldImplicits._
 
   override def version = "0.0.0";
+  override def outputTemplate: Option[APIOutputTemplate] = None;
 
   implicit val ctx = this.renderingContext;
 

@@ -25,7 +25,7 @@
 
 package com.lkroll.roll20.sheet.tabbed
 
-import com.lkroll.roll20.sheet.model.SheetModel
+import com.lkroll.roll20.sheet.model.{ APIOutputTemplate, SheetModel }
 import com.lkroll.roll20.sheet.model.tabbed.TabbedI18N
 import scalatags.Text.all._
 import scalatags.stylesheet._
@@ -125,6 +125,7 @@ case class Tab(id: Int, labeli18n: LabelsI18N, renderer: GroupRenderer, members:
 
 object TabbedModel extends SheetModel {
   override def version(): String = "";
+  override def outputTemplate: Option[APIOutputTemplate] = None;
 }
 
 object TabbedI18NDefaults extends SheetI18NDefaults {

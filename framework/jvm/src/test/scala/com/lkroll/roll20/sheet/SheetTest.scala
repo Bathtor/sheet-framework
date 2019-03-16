@@ -43,6 +43,7 @@ object TestStyle extends SheetStyle {
 object TestSheetModel extends SheetModel {
   import FieldImplicitsExplicitLabels._
   override def version = "0.0.0";
+  override def outputTemplate: Option[APIOutputTemplate] = None;
 
   implicit val ctx = this.renderingContext;
 
