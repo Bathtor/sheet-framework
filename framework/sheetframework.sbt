@@ -5,7 +5,7 @@ name := "Roll20 Sheet Framework Root"
 
 organization in ThisBuild := "com.lkroll.roll20"
 
-version in ThisBuild := "0.11.0-SNAPSHOT"
+version in ThisBuild := "0.11.0"
 
 scalaVersion in ThisBuild := "2.12.8"
 crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.8")
@@ -26,7 +26,7 @@ lazy val sheetframework = crossProject(JSPlatform, JVMPlatform).in(file(".")).
   settings(
     name := "Roll20 Sheet Framework",
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.6.+",
-    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.13.+",
+    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.13.0",
     libraryDependencies += "com.lkroll.roll20" %%% "roll20-sheet-model" % version.value,
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.4" % "test",
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.4" % "test",
