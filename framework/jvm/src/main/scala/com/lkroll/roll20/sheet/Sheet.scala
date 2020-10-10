@@ -45,7 +45,8 @@ trait SimpleSheet extends Sheet {
   override def renderStyle(): String = {
     val es = externalStyles.map(styleURL => {
       val source = io.Source.fromURL(styleURL);
-      try CSSUtil.processFile(source) finally source.close()
+      try CSSUtil.processFile(source)
+      finally source.close()
     });
     (es ++ Seq(style.styleSheetText)).mkString("\n");
   }
@@ -79,10 +80,7 @@ object FieldGroup {
   def apply(renderer: GroupRenderer, elems: SheetElement*) = GroupWithRenderer(renderer, elems);
 }
 
-case class GroupWithRenderer(renderer: GroupRenderer, members: Seq[SheetElement]) extends FieldGroup {
+case class GroupWithRenderer(renderer: GroupRenderer, members: Seq[SheetElement]) extends FieldGroup {}
 
-}
-
-case class FieldSet(renderer: GroupRenderer, repeating: RepeatingSection, members: Seq[SheetElement]) extends FieldGroup {
-
-}
+case class FieldSet(renderer: GroupRenderer, repeating: RepeatingSection, members: Seq[SheetElement])
+    extends FieldGroup {}

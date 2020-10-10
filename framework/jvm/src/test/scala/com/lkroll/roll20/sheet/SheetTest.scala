@@ -26,6 +26,8 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 import scalatags.Text.all._
 import scalatags.stylesheet._
 import java.io.File
@@ -93,7 +95,7 @@ object TestSheet extends SimpleSheet {
   override def translation(): SheetI18NDefaults = Testi18nDefaults;
 }
 
-class SheetTest extends FunSuite with Matchers {
+class SheetTest extends AnyFunSuite with Matchers {
 
   test("Sheet and style should render to text") {
     println("******** Sheet **********");

@@ -1,12 +1,14 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 import scalatags.Text.all._
 import scalatags.stylesheet._
 import java.io.File
 import scala.io.Source
 
-class CSSTest extends FunSuite with Matchers {
+class CSSTest extends AnyFunSuite with Matchers {
   test("CSS comments must be stripped") {
     val srcURL = this.getClass.getClassLoader.getResource("WEB-INF/tabbed.css");
     val source = io.Source.fromURL(srcURL);

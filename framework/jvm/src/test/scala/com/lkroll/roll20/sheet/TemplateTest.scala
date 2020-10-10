@@ -26,6 +26,8 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 import SheetImplicits._
 
 //case class ExampleData(lala: String) extends TemplateData {
@@ -59,7 +61,7 @@ object ExampleTemplate extends RollTemplate {
     });
 }
 
-class TemplateTest extends FunSuite with Matchers {
+class TemplateTest extends AnyFunSuite with Matchers {
   test("Roll Template Rendering") {
     println("******** Template **********");
     println(ExampleTemplate.render);

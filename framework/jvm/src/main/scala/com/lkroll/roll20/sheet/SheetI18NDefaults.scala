@@ -38,7 +38,9 @@ trait SheetI18NDefaults extends Renderable {
     if (!entries.contains(key.key)) {
       entries += (key.key -> default);
     } else {
-      Console.err.println(s"Entries already contains a ${key} -> ${entries(key.key)} mapping. Ignoring new value ${default} and returning new label.");
+      Console.err.println(
+        s"Entries already contains a ${key} -> ${entries(key.key)} mapping. Ignoring new value ${default} and returning new label."
+      );
     }
     DataLabel(key)
   }
@@ -83,9 +85,11 @@ trait SheetI18NDefaults extends Renderable {
     import org.codehaus.jettison.json.JSONObject;
     verify();
     val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
-    sortedEntries.map {
-      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
-    }.mkString("{", ",\n   ", "}")
+    sortedEntries
+      .map {
+        case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+      }
+      .mkString("{", ",\n   ", "}")
   }
 
   def ++(other: SheetI18NDefaults): SheetI18NDefaultsList = other match {
@@ -106,9 +110,11 @@ case class SheetI18NDefaultsList(translations: List[SheetI18NDefaults]) extends 
       case (acc, t) => acc ++ t.entries
     };
     //= scala.collection.immutable.TreeMap(entries.toArray: _*)
-    sortedEntries.map {
-      case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
-    }.mkString("{", ",\n   ", "}")
+    sortedEntries
+      .map {
+        case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+      }
+      .mkString("{", ",\n   ", "}")
   }
   override def ++(other: SheetI18NDefaults): SheetI18NDefaultsList = other match {
     case SheetI18NDefaultsList(trs) => SheetI18NDefaultsList(this.translations ++ trs)

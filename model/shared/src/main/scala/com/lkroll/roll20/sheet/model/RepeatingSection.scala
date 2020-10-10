@@ -39,10 +39,11 @@ trait RepeatingSection extends Fields {
   override def mapSelect(s: String): String = s"${RepeatingSection.prefix}${name}:$s";
   override def mapMatcher(s: String): String => Boolean = {
     val pattern = s"""${RepeatingSection.prefix}${name}_[-a-zA-Z0-9]+_$s""".r;
-    (s: String) => s match {
-      case pattern() => true
-      case _         => false
-    }
+    (s: String) =>
+      s match {
+        case pattern() => true
+        case _         => false
+      }
   }
   override def mapMatcher(rowId: String, s: String): String => Boolean = {
     val pattern = s"""${RepeatingSection.prefix}${name}_${rowId}_$s""";
@@ -84,11 +85,14 @@ case class ReporderField(section: RepeatingSection) extends FieldLike[Array[Stri
    */
   override def canEqual(that: Any) = that.isInstanceOf[ReporderField];
   override def hashCode(): Int = _accessor.hashCode();
-  override def equals(that: Any): Boolean = canEqual(that) && (that.asInstanceOf[ReporderField]._accessor == this._accessor);
+  override def equals(that: Any): Boolean =
+    canEqual(that) && (that.asInstanceOf[ReporderField]._accessor == this._accessor);
 
 }
 
-case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldLike[T]) extends FieldLike[T] with RenderingContext {
+case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldLike[T])
+    extends FieldLike[T]
+    with RenderingContext {
 
   override def qualifier: Option[String] = section.qualifier;
   override def mapAccess(rowId: String, s: String): String = section.mapAccess(rowId, s);
@@ -109,5 +113,6 @@ case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldL
    */
   override def canEqual(that: Any) = that.isInstanceOf[FieldAtRow[_]];
   override def hashCode(): Int = accessor.hashCode();
-  override def equals(that: Any): Boolean = canEqual(that) && (that.asInstanceOf[FieldAtRow[_]].accessor == this.accessor);
+  override def equals(that: Any): Boolean =
+    canEqual(that) && (that.asInstanceOf[FieldAtRow[_]].accessor == this.accessor);
 }

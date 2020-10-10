@@ -29,7 +29,7 @@ import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
 
 import collection.mutable
-import util.{ Try, Success, Failure }
+import util.{Failure, Success, Try}
 
 trait UpdateManager extends SheetWorker {
   def update(from: String, to: String): List[SheetWorkerOp];
@@ -51,7 +51,9 @@ trait UpdateManager extends SheetWorker {
       case (v) => Seq(newField <<= mapper(v))
     }
   }
-  def typeChangeRepeating[I, O](section: RepeatingSection, oldField: Field[I], newField: Field[O])(mapper: I => O): SheetWorkerOp = {
+  def typeChangeRepeating[I, O](section: RepeatingSection, oldField: Field[I], newField: Field[O])(
+      mapper: I => O
+  ): SheetWorkerOp = {
     val secOp = op(oldField) update {
       case (v) => Seq(newField <<= mapper(v))
     };
@@ -60,13 +62,17 @@ trait UpdateManager extends SheetWorker {
 }
 
 case class SemanticVersion(major: Int, minor: Int, patch: Int, snapshot: Boolean) {
+
   /**
-   * Per category version difference.
-   *
-   * Snapshot status is maintained if either version is a snapshot.
-   */
+    * Per category version difference.
+    *
+    * Snapshot status is maintained if either version is a snapshot.
+    */
   def -(other: SemanticVersion): SemanticVersion = {
-    SemanticVersion(this.major - other.major, this.minor - other.minor, this.patch - other.patch, this.snapshot || other.snapshot)
+    SemanticVersion(this.major - other.major,
+                    this.minor - other.minor,
+                    this.patch - other.patch,
+                    this.snapshot || other.snapshot)
   }
   def incMajor(): SemanticVersion = this.copy(major = this.major + 1, minor = 0, patch = 0);
   def incMinor(): SemanticVersion = this.copy(minor = this.minor + 1, patch = 0);
@@ -81,12 +87,13 @@ object SemanticVersion {
   def fromString(s: String): Try[SemanticVersion] = {
     Try {
       s match {
-        case versionFormat(majorS, minorS, patchS, snapS) => for {
-          major <- Try(majorS.toInt);
-          minor <- Try(minorS.toInt);
-          patch <- Try(patchS.toInt);
-          snap <- Try(if (snapS == null) false else true)
-        } yield SemanticVersion(major, minor, patch, snap)
+        case versionFormat(majorS, minorS, patchS, snapS) =>
+          for {
+            major <- Try(majorS.toInt);
+            minor <- Try(minorS.toInt);
+            patch <- Try(patchS.toInt);
+            snap <- Try(if (snapS == null) false else true)
+          } yield SemanticVersion(major, minor, patch, snap)
       }
     }.flatten
   }
@@ -98,10 +105,10 @@ trait MinorVersionUpdateManager extends UpdateManager {
   def model: SheetModel;
   //def updateUnversioned(version: String): List[SheetWorkerOp];
   /**
-   * Called on every version update operation with the new version.
-   *
-   * Return fields to be written.
-   */
+    * Called on every version update operation with the new version.
+    *
+    * Return fields to be written.
+    */
   def onEveryVersionUpdate(newVersion: String): Seq[(FieldLike[Any], Any)] = Seq(model.versionField <<= newVersion);
 
   override def update(from: String, to: String): List[SheetWorkerOp] = {
@@ -147,10 +154,10 @@ trait MinorVersionUpdateManager extends UpdateManager {
   //    updates += (entry._1 -> nl);
   //  }
   /**
-   * Set all the updates for a particular version in a single invocation.
-   *
-   * Overrides previous entries for that version!
-   */
+    * Set all the updates for a particular version in a single invocation.
+    *
+    * Overrides previous entries for that version!
+    */
   def forVersion(s: String)(updates: => List[SheetWorkerOp]): Unit = {
     val Success(v) = SemanticVersion.fromString(s);
     val newV = v.incMinor();
@@ -160,4 +167,3 @@ trait MinorVersionUpdateManager extends UpdateManager {
     setUpdate(v.minor, updates :+ vUpdate)
   }
 }
-

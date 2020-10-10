@@ -28,8 +28,8 @@ package com.lkroll.roll20.sheet
 import scalajs.js
 import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
-import concurrent.{ Future, Promise, ExecutionContext }
-import util.{ Try, Success, Failure }
+import concurrent.{ExecutionContext, Future, Promise}
+import util.{Failure, Success, Try}
 
 case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends SheetWorker {
 
@@ -97,7 +97,7 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
             };
             _ <- deactivateOverlay()
           } yield ();
-          f.onComplete{
+          f.onComplete {
             case Success(_) => debug("Update completed fine.");
             case Failure(e) => {
               debug(s"Updated failed with ${e.getMessage}:");
