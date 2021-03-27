@@ -70,8 +70,10 @@ sealed trait FieldOps[T] {
 }
 
 sealed trait FieldOpsWithCompleter[T] extends FieldOps[T] {
-  def apply(f: Option[T] => Unit, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext,
-                                                                 dummy: DummyImplicit): SheetWorkerOp = {
+  def apply(f: Option[T] => Unit, onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext,
+      dummy: DummyImplicit
+  ): SheetWorkerOp = {
     val f2 = (ot: Option[T]) => {
       val p = Promise[Unit]();
       p.success(f(ot));
@@ -98,7 +100,8 @@ sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
   };
 
   def apply(f: Option[T] => Unit,
-            op: SheetWorkerOp)(implicit ec: ExecutionContext, d1: DummyImplicit, d2: DummyImplicit): SheetWorkerOp = {
+            op: SheetWorkerOp
+  )(implicit ec: ExecutionContext, d1: DummyImplicit, d2: DummyImplicit): SheetWorkerOp = {
     val f2 = (ot: Option[T]) => {
       val p = Promise[ChainingDecision]();
       f(ot);
@@ -108,8 +111,10 @@ sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
     apply(f2, op)
   };
 
-  def apply(f: Option[T] => Future[Unit], op: SheetWorkerOp)(implicit ec: ExecutionContext,
-                                                             d1: DummyImplicit): SheetWorkerOp = {
+  def apply(f: Option[T] => Future[Unit], op: SheetWorkerOp)(implicit
+      ec: ExecutionContext,
+      d1: DummyImplicit
+  ): SheetWorkerOp = {
     apply(defaultChainingDecision(f), op)
   }
 
@@ -117,8 +122,10 @@ sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
 
   def update(f: T => Updates, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
 
-  def update(f: T => UpdateDecision, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext,
-                                                            d1: DummyImplicit): SheetWorkerOp;
+  def update(f: T => UpdateDecision, nextOp: SheetWorkerOp)(implicit
+      ec: ExecutionContext,
+      d1: DummyImplicit
+  ): SheetWorkerOp;
 }
 
 sealed trait FieldOpsWithFields[T] extends FieldOps[T] {
@@ -142,8 +149,9 @@ sealed trait FieldOpsWithFields[T] extends FieldOps[T] {
     }
   }
 
-  def sum[N: Numeric](section: RepeatingSection,
-                      outputField: FieldLike[N])(toNum: T => N)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  def sum[N: Numeric](section: RepeatingSection, outputField: FieldLike[N])(
+      toNum: T => N
+  )(implicit ec: ExecutionContext): SheetWorkerOp = {
     NoOp(sheet) { _: Option[Unit] =>
       val nev = implicitly[Numeric[N]];
       val f: (N, (String, T)) => N = (acc: N, v: (String, T)) =>
@@ -202,34 +210,40 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
     op
   }
 
-  override def apply(f: Option[T] => Future[Unit],
-                     onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[Unit], onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext
+  ): SheetWorkerOp = {
     val op = new SideEffectingSheetWorkerOp(partial, defaultChainingDecision(f));
     bind(op, onComplete);
     op
   }
 
-  override def apply(f: Option[T] => Future[ChainingDecision],
-                     nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[T] => Future[ChainingDecision], nextOp: SheetWorkerOp)(implicit
+      ec: ExecutionContext
+  ): SheetWorkerOp = {
     val op = new SideEffectingSheetWorkerOp(partial, f) andThen nextOp;
     bind(op);
     op
   }
 
   private def bind(op: SheetWorkerOp)(implicit ec: ExecutionContext) {
-    sheet.on(trigger, (e) => {
-      sheet.log(s"Op triggered for: ${trigger}");
-      op().onFailure {
-        case e: Throwable => sheet.error(e)
-      };
-    });
+    sheet.on(trigger,
+             (e) => {
+               sheet.log(s"Op triggered for: ${trigger}");
+               op().onFailure { case e: Throwable =>
+                 sheet.error(e)
+               };
+             }
+    );
   }
 
   private def bind(op: SheetWorkerOp, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext) {
-    sheet.on(trigger, (e) => {
-      sheet.log(s"Op triggered for: ${trigger}");
-      op().onComplete(x => onComplete(x.map(_ => ())));
-    });
+    sheet.on(trigger,
+             (e) => {
+               sheet.log(s"Op triggered for: ${trigger}");
+               op().onComplete(x => onComplete(x.map(_ => ())));
+             }
+    );
   }
 
   override def update(f: T => Updates)(implicit ec: ExecutionContext): SheetWorkerOp = {
@@ -250,8 +264,10 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
     op
   }
 
-  override def update(f: T => UpdateDecision, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext,
-                                                                     d1: DummyImplicit): SheetWorkerOp = {
+  override def update(f: T => UpdateDecision, nextOp: SheetWorkerOp)(implicit
+      ec: ExecutionContext,
+      d1: DummyImplicit
+  ): SheetWorkerOp = {
     val op = new WritingNoMergeSheetWorkerOp(partial, f) andThen nextOp;
     bind(op);
     op
@@ -306,8 +322,8 @@ sealed trait SheetWorkerOp {
 }
 
 case class SideEffectingSheetWorkerOp[T](partial: FieldOpsWithFields[T],
-                                         application: Option[T] => Future[ChainingDecision])
-    extends SheetWorkerOp {
+                                         application: Option[T] => Future[ChainingDecision]
+) extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
   override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = {
@@ -415,7 +431,8 @@ object SheetWorkerOpChain {
 
   @tailrec private def leftDescend(sheet: SheetWorker,
                                    acc: List[ChainOperation],
-                                   rest: List[SheetWorkerOp]): List[ChainOperation] = {
+                                   rest: List[SheetWorkerOp]
+  ): List[ChainOperation] = {
     rest match {
       case h :: r =>
         h match {
@@ -432,7 +449,8 @@ object SheetWorkerOpChain {
   @tailrec private def rightDescend(sheet: SheetWorker,
                                     wacc: List[WritingSheetWorkerOp[_]],
                                     acc: List[ChainOperation],
-                                    rest: List[SheetWorkerOp]): List[ChainOperation] = {
+                                    rest: List[SheetWorkerOp]
+  ): List[ChainOperation] = {
     rest match {
       case h :: r =>
         h match {
@@ -506,12 +524,11 @@ case class ChainedOpChain(sheet: SheetWorker, operations: List[ChainOperation]) 
   override def apply()(implicit ec: ExecutionContext): Future[ChainingDecision] = {
     sheet.log(s"Executing op:\n${this}");
     val emptyAcc: Future[ChainingDecision] = Future.successful(ExecuteChain);
-    operations.foldLeft(emptyAcc) {
-      case (f, op) =>
-        f flatMap {
-          case ExecuteChain => op.apply()
-          case SkipChain    => Future.successful(SkipChain)
-        }
+    operations.foldLeft(emptyAcc) { case (f, op) =>
+      f flatMap {
+        case ExecuteChain => op.apply()
+        case SkipChain    => Future.successful(SkipChain)
+      }
     }
   }
 

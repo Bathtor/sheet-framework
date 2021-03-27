@@ -69,7 +69,8 @@ trait TabbedSheet extends Sheet {
         input(`type` := "checkbox",
               name := model.closeOverlay.name,
               value := model.closeOverlay.initialValue,
-              checked := "checked"),
+              checked := "checked"
+        ),
         span(tt.closeOverlay)
       )
     )
@@ -92,7 +93,8 @@ trait TabbedSheet extends Sheet {
       input(`type` := "hidden",
             name := model.showOverlay.name,
             value := model.showOverlay.initialValue,
-            TabbedStyle.`show-modoverlay`),
+            TabbedStyle.`show-modoverlay`
+      ),
       modOverlay,
       hiddenGroup.render(),
       input(`type` := "checkbox", name := "attr_edit_mode", `class` := "sheet-toggle-edit-mode sheet-hidden"),
@@ -109,8 +111,9 @@ trait TabbedSheet extends Sheet {
     val tabStyle = tabs.map(_.css).mkString("\n");
     val es = (tabbedStyle :: externalStyles).map(styleURL => {
       val source = io.Source.fromURL(styleURL);
-      val sourceString = try CSSUtil.processFile(source)
-      finally source.close();
+      val sourceString =
+        try CSSUtil.processFile(source)
+        finally source.close();
       val replacedString = colourScheme.replaceColoursInText(sourceString);
       replacedString
     });
@@ -202,7 +205,8 @@ object TabbedStyle extends CascadingStyleSheet {
                 display := "-ms-flexbox",
                 display.flex,
                 //"-ms-flex-wrap" := "wrap",
-                flexWrap.wrap);
+                flexWrap.wrap
+  );
 }
 
 case class HiddenGroup(members: Seq[SheetElement]) extends FieldGroup {
@@ -210,8 +214,8 @@ case class HiddenGroup(members: Seq[SheetElement]) extends FieldGroup {
 }
 
 object HiddenRenderer extends GroupRenderer {
-  override def fieldRenderers: GroupRenderer.FieldRenderer = {
-    case (f, _) => input(`type` := "hidden", name := f.name, value := f.initialValue)
+  override def fieldRenderers: GroupRenderer.FieldRenderer = { case (f, _) =>
+    input(`type` := "hidden", name := f.name, value := f.initialValue)
   };
 
   override def fieldCombiner = { tags =>

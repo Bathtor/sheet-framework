@@ -50,8 +50,8 @@ trait GroupRenderer {
 
   def apply(elems: SheetElement*) = GroupWithRenderer(this, elems);
 
-  val defaultFieldRenderer: FieldRenderer = {
-    case (f, _) => span(name := f.name, visibility.hidden)
+  val defaultFieldRenderer: FieldRenderer = { case (f, _) =>
+    span(name := f.name, visibility.hidden)
   };
 
   val defaultFieldCombiner: FieldCombiner = { tags =>

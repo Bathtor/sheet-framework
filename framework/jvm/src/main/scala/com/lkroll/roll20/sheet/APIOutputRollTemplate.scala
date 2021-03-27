@@ -42,7 +42,8 @@ trait APIOutputRollTemplate extends RollTemplate with APIOutputTemplate {
 
   def apply(title: String,
             content: String,
-            continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
+            continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] = List(titleField <<= title, contentField <<= content);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
@@ -50,7 +51,8 @@ trait APIOutputRollTemplate extends RollTemplate with APIOutputTemplate {
 
   def warning(title: String,
               content: String,
-              continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
+              continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] =
       List(titleField <<= title, contentField <<= content, isWarning <<= true);
     apps ++= continuationToApps(continuation);
@@ -59,7 +61,8 @@ trait APIOutputRollTemplate extends RollTemplate with APIOutputTemplate {
 
   def error(title: String,
             content: String,
-            continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
+            continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] =
       List(titleField <<= title, contentField <<= content, isError <<= true);
     apps ++= continuationToApps(continuation);

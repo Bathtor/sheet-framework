@@ -52,8 +52,8 @@ trait SheetI18NDefaults extends Renderable {
   }
 
   def enum[T <: Enumeration](keys: OptionKey[T], defaults: T#Value => String): OptionLabel = {
-    val opts = keys.options.map {
-      case (enumval, key) => enumval.toString -> text(DataKey(key), defaults(enumval))
+    val opts = keys.options.map { case (enumval, key) =>
+      enumval.toString -> text(DataKey(key), defaults(enumval))
     };
     return new OptionLabel(opts);
   }
@@ -86,8 +86,8 @@ trait SheetI18NDefaults extends Renderable {
     verify();
     val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
     sortedEntries
-      .map {
-        case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+      .map { case (k, v) =>
+        s"""\"$k\":${JSONObject.quote(v)}"""
       }
       .mkString("{", ",\n   ", "}")
   }
@@ -111,8 +111,8 @@ case class SheetI18NDefaultsList(translations: List[SheetI18NDefaults]) extends 
     };
     //= scala.collection.immutable.TreeMap(entries.toArray: _*)
     sortedEntries
-      .map {
-        case (k, v) => s"""\"$k\":${JSONObject.quote(v)}"""
+      .map { case (k, v) =>
+        s"""\"$k\":${JSONObject.quote(v)}"""
       }
       .mkString("{", ",\n   ", "}")
   }

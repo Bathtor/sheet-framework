@@ -53,8 +53,8 @@ sealed trait Field[T] extends FieldLike[T] {
 case class FlagField(ctx: RenderingContext,
                      attr: String,
                      defaultValue: Option[Boolean] = None,
-                     editable: Boolean = true)
-    extends Field[Boolean] {
+                     editable: Boolean = true
+) extends Field[Boolean] {
   type F = FlagField
 
   override def reader = CoreImplicits.readableBoolean;
@@ -80,8 +80,8 @@ case class EnumField(ctx: RenderingContext,
                      defaultValue: Option[String],
                      options: Set[String],
                      enum: Option[Enumeration],
-                     editable: Boolean = false)
-    extends Field[String] {
+                     editable: Boolean = false
+) extends Field[String] {
   type F = EnumField
 
   override def reader = CoreImplicits.readableString; // maybe check that value is actually a member of options?
@@ -94,7 +94,13 @@ case class EnumField(ctx: RenderingContext,
 
   override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, enum, editable);
   def default(s: Any): EnumField =
-    EnumField(ctx, attr, Some(s.toString()), options, enum, editable); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
+    EnumField(ctx,
+              attr,
+              Some(s.toString()),
+              options,
+              enum,
+              editable
+    ); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
   override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, enum, b);
 }
 
@@ -136,8 +142,8 @@ case class NumberField[N: Numeric](ctx: RenderingContext,
                                    reader: Readable[N],
                                    defaultValue: Option[N] = None,
                                    editable: Boolean = true,
-                                   valid: Option[NumberValidity[N]] = None)
-    extends Field[N] {
+                                   valid: Option[NumberValidity[N]] = None
+) extends Field[N] {
 
   type F = NumberField[N]
 
@@ -155,8 +161,8 @@ case class FieldRefRepeating[T](ctx: RenderingContext,
                                 attr: String,
                                 ref: FieldLike[T],
                                 defaultValue: Option[String] = None,
-                                editable: Boolean = true)
-    extends Field[String] {
+                                editable: Boolean = true
+) extends Field[String] {
 
   type F = FieldRefRepeating[T]
 
@@ -176,8 +182,8 @@ case class FieldRefRepeating[T](ctx: RenderingContext,
 case class FieldRef[T](ctx: RenderingContext,
                        attr: String,
                        defaultValue: Option[String] = None,
-                       editable: Boolean = true)
-    extends Field[String] {
+                       editable: Boolean = true
+) extends Field[String] {
 
   type F = FieldRef[T]
 
@@ -199,8 +205,8 @@ case class FieldRef[T](ctx: RenderingContext,
 case class ExpressionField[T](ctx: RenderingContext,
                               attr: String,
                               defaultValue: Option[String] = None,
-                              editable: Boolean = true)
-    extends Field[String] {
+                              editable: Boolean = true
+) extends Field[String] {
 
   type F = ExpressionField[T]
 
@@ -225,8 +231,8 @@ case class ExpressionField[T](ctx: RenderingContext,
 case class ChatField(ctx: RenderingContext,
                      attr: String,
                      defaultValue: Option[ChatCommand] = None,
-                     editable: Boolean = true)
-    extends Field[ChatCommand] {
+                     editable: Boolean = true
+) extends Field[ChatCommand] {
 
   type F = ChatField
 

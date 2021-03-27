@@ -60,8 +60,8 @@ object SheetImplicits {
   def dualMode[E1, E2](e1: E1, e2: E2)(implicit f1: E1 => SheetElement, f2: E2 => SheetElement): DualModeElement =
     DualModeElement(editOnly(e1), presOnly(e2));
   def roll[E](roll: Button, e: E)(implicit f: E => SheetElement): RollElement = RollElement(roll, e);
-  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication, e: E)(
-      implicit f: E => SheetElement
+  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication, e: E)(implicit
+      f: E => SheetElement
   ): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(chat, template)), e);
   def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication): Button =
     Button(ctx, name, Rolls.TemplateRoll(chat, template));
@@ -71,14 +71,16 @@ object SheetImplicits {
   def roll[E](ctx: RenderingContext,
               name: String,
               chatf: FieldLike[ChatCommand],
-              template: TemplateApplication): Button =
+              template: TemplateApplication
+  ): Button =
     Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template));
   def roll[E](ctx: RenderingContext,
               name: String,
               cmd: String,
               args: List[(String, Renderable)] = List.empty,
               trailing: Option[Renderable] = None,
-              e: E)(implicit f: E => SheetElement): RollElement =
+              e: E
+  )(implicit f: E => SheetElement): RollElement =
     RollElement(Button(ctx, name, Rolls.APIRoll(cmd, args, trailing)), e);
 
   implicit def seqToLabels(labels: Seq[LabelI18N]): LabelsI18N = LabelSeq(labels);

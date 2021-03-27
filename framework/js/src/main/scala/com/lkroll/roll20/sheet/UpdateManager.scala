@@ -36,26 +36,26 @@ trait UpdateManager extends SheetWorker {
   def updateUnversioned(version: String): List[SheetWorkerOp];
 
   def nameChange[T](oldField: Field[T], newField: Field[T]): SheetWorkerOp = {
-    op(oldField) update {
-      case (v) => Seq(newField <<= v, oldField <<= oldField.resetValue)
+    op(oldField) update { case (v) =>
+      Seq(newField <<= v, oldField <<= oldField.resetValue)
     }
   }
   def nameChangeRepeating[T](section: RepeatingSection, oldField: Field[T], newField: Field[T]): SheetWorkerOp = {
-    val secOp = op(oldField) update {
-      case (v) => Seq(newField <<= v, oldField <<= oldField.resetValue)
+    val secOp = op(oldField) update { case (v) =>
+      Seq(newField <<= v, oldField <<= oldField.resetValue)
     };
     secOp.all(section)
   }
   def typeChange[I, O](oldField: Field[I], newField: Field[O])(mapper: I => O): SheetWorkerOp = {
-    op(oldField) update {
-      case (v) => Seq(newField <<= mapper(v))
+    op(oldField) update { case (v) =>
+      Seq(newField <<= mapper(v))
     }
   }
   def typeChangeRepeating[I, O](section: RepeatingSection, oldField: Field[I], newField: Field[O])(
       mapper: I => O
   ): SheetWorkerOp = {
-    val secOp = op(oldField) update {
-      case (v) => Seq(newField <<= mapper(v))
+    val secOp = op(oldField) update { case (v) =>
+      Seq(newField <<= mapper(v))
     };
     secOp.all(section)
   }
@@ -63,8 +63,7 @@ trait UpdateManager extends SheetWorker {
 
 case class SemanticVersion(major: Int, minor: Int, patch: Int, snapshot: Boolean) {
 
-  /**
-    * Per category version difference.
+  /** Per category version difference.
     *
     * Snapshot status is maintained if either version is a snapshot.
     */
@@ -72,7 +71,8 @@ case class SemanticVersion(major: Int, minor: Int, patch: Int, snapshot: Boolean
     SemanticVersion(this.major - other.major,
                     this.minor - other.minor,
                     this.patch - other.patch,
-                    this.snapshot || other.snapshot)
+                    this.snapshot || other.snapshot
+    )
   }
   def incMajor(): SemanticVersion = this.copy(major = this.major + 1, minor = 0, patch = 0);
   def incMinor(): SemanticVersion = this.copy(minor = this.minor + 1, patch = 0);
@@ -104,8 +104,7 @@ trait MinorVersionUpdateManager extends UpdateManager {
 
   def model: SheetModel;
   //def updateUnversioned(version: String): List[SheetWorkerOp];
-  /**
-    * Called on every version update operation with the new version.
+  /** Called on every version update operation with the new version.
     *
     * Return fields to be written.
     */
@@ -153,8 +152,7 @@ trait MinorVersionUpdateManager extends UpdateManager {
   //    };
   //    updates += (entry._1 -> nl);
   //  }
-  /**
-    * Set all the updates for a particular version in a single invocation.
+  /** Set all the updates for a particular version in a single invocation.
     *
     * Overrides previous entries for that version!
     */

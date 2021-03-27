@@ -34,7 +34,7 @@ trait Colour {
 
 case class ColourNum(n: Int) extends Colour {
   override def css: String = {
-    val masked = (0xFFFFFF & n);
+    val masked = (0xffffff & n);
     "#%06X".format(masked);
   }
 }
@@ -176,7 +176,8 @@ case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
     rgb((colourNode \ "@id").text,
         (colourNode \ "@r").text.toInt,
         (colourNode \ "@g").text.toInt,
-        (colourNode \ "@b").text.toInt)
+        (colourNode \ "@b").text.toInt
+    )
   }
 
   // *** Primary color:

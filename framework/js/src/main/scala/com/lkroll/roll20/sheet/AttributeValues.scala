@@ -109,12 +109,12 @@ case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], origina
   override def toString: String = {
     val data = original match {
       case DataAttributeValues(values) =>
-        values.map {
-          case (k, v) => s"$k -> $v -> ${apply(k)}"
+        values.map { case (k, v) =>
+          s"$k -> $v -> ${apply(k)}"
         }
       case RowAttributeValues(rowId, original) =>
-        original.values.map {
-          case (k, v) => s"$k @ $rowId -> $v -> ${apply(k)}"
+        original.values.map { case (k, v) =>
+          s"$k @ $rowId -> $v -> ${apply(k)}"
         }
       case _ => Seq("Invalid")
     }

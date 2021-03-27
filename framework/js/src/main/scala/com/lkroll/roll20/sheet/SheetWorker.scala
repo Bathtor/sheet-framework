@@ -69,11 +69,11 @@ trait SheetWorkerRoot extends SheetWorker {
     }
     children.foreach(_.internal_load());
     debug("------ Registered Serialisers -------");
-    fieldSerialisers.foreach {
-      case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
+    fieldSerialisers.foreach { case (f, s) =>
+      debug(s"${f} -> ${s.getClass.getName}")
     }
-    typeSerialisers.foreach {
-      case (t, s) => debug(s"${t} -> ${s.getClass.getName}")
+    typeSerialisers.foreach { case (t, s) =>
+      debug(s"${t} -> ${s.getClass.getName}")
     }
   }
 }
@@ -85,7 +85,7 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue;
 
   val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]]
-  with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
+    with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 
   private[sheet] var fieldSerialisers = Map.empty[String, JSSerialiser[Any]];
   private[sheet] var typeSerialisers = List.empty[(Class[Any], JSSerialiser[Any])];
@@ -119,8 +119,8 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   private def checkTypeHierarchies(cls: Class[_]): Option[JSSerialiser[Any]] = {
     typeSerialisers
-      .find({
-        case (targetCls, ser) => targetCls.isAssignableFrom(cls)
+      .find({ case (targetCls, ser) =>
+        targetCls.isAssignableFrom(cls)
       })
       .map(_._2)
   }
@@ -161,7 +161,8 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
                        fields: FieldOpsWithFields[T],
                        initialValue: Acc,
                        f: (Acc, (String, T)) => Acc,
-                       r: Acc => Updates): Future[ChainingDecision] = {
+                       r: Acc => Updates
+  ): Future[ChainingDecision] = {
     val resF = for {
       rows <- getRowAttrs(section, fields.getFields)
     } yield {
@@ -199,12 +200,11 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
                 val data = DataAttributeValues(values.toMap);
                 val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
                 val output = attrs.mapValues(attrs => op.computeOutput(attrs));
-                val outputDataFs = output.map {
-                  case (id, output) =>
-                    output.map {
-                      case (values, cd) => (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
-                    }
-                  //
+                val outputDataFs = output.map { case (id, output) =>
+                  output.map { case (values, cd) =>
+                    (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
+                  }
+                //
                 };
                 val outputDataF = Future.sequence(outputDataFs).map { outputData =>
                   val emptyAcc: (Map[String, js.Any], ChainingDecision) = (Map.empty[String, js.Any], SkipChain);
@@ -215,11 +215,13 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
                   }
                 }
                 //.flatten.toMap.toJSDictionary;
-                outputDataF map {
-                  case (outputData, cd) =>
-                    Roll20.setAttrs(outputData.toJSDictionary, SetterOptions.silent(true), () => {
-                      p.success(cd); ()
-                    })
+                outputDataF map { case (outputData, cd) =>
+                  Roll20.setAttrs(outputData.toJSDictionary,
+                                  SetterOptions.silent(true),
+                                  () => {
+                                    p.success(cd); ()
+                                  }
+                  )
                 };
                 ()
               }
@@ -227,12 +229,11 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
           }
           case coc: ChainedOpChain => {
             val emptyAcc: Future[ChainingDecision] = Future.successful(ExecuteChain);
-            val f = coc.operations.foldLeft(emptyAcc) {
-              case (f, op) =>
-                f flatMap {
-                  case ExecuteChain => forAllRows(section, op.lift())
-                  case SkipChain    => Future.successful(SkipChain)
-                }
+            val f = coc.operations.foldLeft(emptyAcc) { case (f, op) =>
+              f flatMap {
+                case ExecuteChain => forAllRows(section, op.lift())
+                case SkipChain    => Future.successful(SkipChain)
+              }
             };
             p.completeWith(f);
           }
@@ -246,9 +247,11 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   def getAttrs(fields: Set[FieldLike[_]]): Future[AttributeValues] = {
     val attrNames: js.Array[String] = fields.map(_.accessor).toJSArray;
     val p = Promise[AttributeValues]();
-    Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
-      p.success(DataAttributeValues(values.toMap)); ()
-    });
+    Roll20.getAttrs(attrNames,
+                    (values: js.Dictionary[Any]) => {
+                      p.success(DataAttributeValues(values.toMap)); ()
+                    }
+    );
     p.future
   }
 
@@ -262,15 +265,18 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   def setAttrs(values: Map[FieldLike[Any], Any], silent: Boolean = true): Future[Unit] = {
     val valuesWithNames = values
-      .map({
-        case (f, v) => (f.accessor -> serialise(f, v))
+      .map({ case (f, v) =>
+        (f.accessor -> serialise(f, v))
       })
       .toJSDictionary;
     val p = Promise[Unit]();
     log(s"Setting attrs: ${valuesWithNames.mkString}");
-    Roll20.setAttrs(valuesWithNames, SetterOptions.silent(silent), () => {
-      p.success(); ()
-    });
+    Roll20.setAttrs(valuesWithNames,
+                    SetterOptions.silent(silent),
+                    () => {
+                      p.success(); ()
+                    }
+    );
     //Roll20.setAttrs(valuesWithNames);
     p.future
   }

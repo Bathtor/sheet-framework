@@ -92,7 +92,8 @@ trait RollTemplate extends Renderable {
     RollBetween(f, Right(lcp), Left(hcp));
   def rollBetween[T](f: TemplateField[RollField[T]],
                      lcp: TemplateField[RollField[T]],
-                     hcp: TemplateField[RollField[T]]) = RollBetween(f, Right(lcp), Right(hcp));
+                     hcp: TemplateField[RollField[T]]
+  ) = RollBetween(f, Right(lcp), Right(hcp));
 
   def any(s: String) = AnyField(s);
 
@@ -167,8 +168,8 @@ object RollTemplate {
 
   case class RollBetween[T](f: TemplateField[RollField[T]],
                             lcpE: Either[T, TemplateField[RollField[T]]],
-                            hcpE: Either[T, TemplateField[RollField[T]]])
-      extends HelperFunc {
+                            hcpE: Either[T, TemplateField[RollField[T]]]
+  ) extends HelperFunc {
     val name = "rollBetween()";
     override def render: String = {
       val lcp: String = lcpE match {
@@ -220,8 +221,8 @@ case class MapTemplateApplication(template: RollTemplate, data: Map[TemplateFiel
     extends TemplateApplication {
   override def render: String =
     data
-      .map({
-        case (k, v) => s"{{${k.name}=${v.render}}}"
+      .map({ case (k, v) =>
+        s"{{${k.name}=${v.render}}}"
       })
       .mkString(s"&{template:${template.name}} ", " ", "");
 }
