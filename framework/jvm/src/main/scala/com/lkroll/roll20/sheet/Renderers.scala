@@ -91,7 +91,7 @@ trait GroupRenderer {
   }
 
   def render(fg: FieldGroup, mode: RenderMode = RenderMode.Normal): Tag = {
-    val tags = fg.members().map(renderElement(_, mode));
+    val tags = fg.members.map(renderElement(_, mode));
     fieldCombiner(tags)
   }
 
@@ -146,5 +146,5 @@ case class DefaultFieldSetRenderer(repeating: RepeatingSection) extends GroupRen
 
 case class DefaultRendererGroup(members: Seq[SheetElement]) extends FieldGroup {
 
-  def renderer(): GroupRenderer = DefaultRenderer;
+  def renderer: GroupRenderer = DefaultRenderer;
 }

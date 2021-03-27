@@ -31,7 +31,6 @@ import scalatags.Text.all._
 import scalatags.stylesheet._
 import java.net.URL
 import com.lkroll.roll20.sheet._
-import scala.collection.Seq
 
 trait TabbedSheet extends Sheet {
 
@@ -42,10 +41,10 @@ trait TabbedSheet extends Sheet {
   def tabs: Seq[Tab];
   def footer: FieldGroup;
 
-  def style(): StyleSheet;
+  def style: StyleSheet;
   def colourScheme: ColourScheme;
   def externalStyles: List[URL] = List();
-  def translation(): SheetI18NDefaults;
+  def translation: SheetI18NDefaults;
   def templates: List[RollTemplate] = List();
 
   def pageToggle = input(`type` := "hidden", TabbedStyle.pageToggle, name := "attr_tab", value := 0)
@@ -76,7 +75,7 @@ trait TabbedSheet extends Sheet {
     )
   );
 
-  override def render(): String = {
+  override def render: String = {
     val hiddenGroup = HiddenGroup(hidden);
     val tabBar = div(
       TabbedStyle.nav,
@@ -124,7 +123,7 @@ trait TabbedSheet extends Sheet {
   private var tabCount = 0;
 
   protected def tab(label: LabelsI18N, fg: FieldGroup): Tab = {
-    val t = Tab(tabCount, label, fg.renderer(), fg.members());
+    val t = Tab(tabCount, label, fg.renderer, fg.members);
     tabCount += 1;
     t
   }
@@ -143,7 +142,7 @@ case class Tab(id: Int, labeli18n: LabelsI18N, renderer: GroupRenderer, members:
 }
 
 object TabbedModel extends SheetModel {
-  override def version(): String = "";
+  override def version: String = "";
   override def outputTemplate: Option[APIOutputTemplate] = None;
 }
 

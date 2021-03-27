@@ -27,7 +27,7 @@ package com.lkroll.roll20.sheet
 
 import scalatags.Text.all._
 import com.lkroll.roll20.core._
-import com.lkroll.roll20.sheet.model._
+import com.lkroll.roll20.sheet.model.{TemplateField => ModelTemplateField, _}
 
 object SheetImplicits {
   implicit def seqToFieldGroup(elems: Seq[SheetElement]): FieldGroup = DefaultRendererGroup(elems);

@@ -27,6 +27,7 @@ package com.lkroll.roll20.sheet.model
 import com.lkroll.roll20.core._
 
 class AutocalcField[T](val base: Field[T], val aexpr: AutocalcExpression[T]) extends FieldLike[T] {
+  // TODO: Get rid of () in core
   override def editable(): Boolean = false; // autocalc is never editable
   override def attr: String = base.attr;
   override def name: String = base.name;

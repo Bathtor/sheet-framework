@@ -37,9 +37,7 @@ import com.lkroll.roll20.sheet.model.SheetI18N
 
 object TestStyle extends SheetStyle {
   initStyleSheet();
-  val x = cls(
-    backgroundColor := "red",
-    height := 125);
+  val x = cls(backgroundColor := "red", height := 125);
 }
 
 object TestSheetModel extends SheetModel {
@@ -53,11 +51,13 @@ object TestSheetModel extends SheetModel {
   val str = "str".default(10);
   val strMod = "str_mod".autocalc(floor(str / 2 - 5));
   val strSave = "str_save".roll((1 d 20).label("D20") + strMod);
-  val skills = new RepeatingSection {
+
+  object skills extends RepeatingSection {
     implicit val ctx = this.renderingContext;
     override def name = "skills";
     val mod = "skillmod".default(5);
   }
+
   val testRoll = "test_roll".roll((1 d 20) + strMod);
 }
 
@@ -85,21 +85,20 @@ object TestSheet extends SimpleSheet {
     m.strMod,
     m.strSave,
     skillGroup,
-    m.test like { tf => span(name := tf.name, SheetI18NAttrs.datai18nDynamic) });
+    m.test like { tf => span(name := tf.name, SheetI18NAttrs.datai18nDynamic) }
+  );
 
-  val skillGroup = m.skills(
-    label(t.skillMod),
-    m.skills.mod);
+  val skillGroup = m.skills(label(t.skillMod), m.skills.mod);
 
-  override def style(): StyleSheet = TestStyle;
-  override def translation(): SheetI18NDefaults = Testi18nDefaults;
+  override def style: StyleSheet = TestStyle;
+  override def translation: SheetI18NDefaults = Testi18nDefaults;
 }
 
 class SheetTest extends AnyFunSuite with Matchers {
 
   test("Sheet and style should render to text") {
     println("******** Sheet **********");
-    println(TestSheet.render());
+    println(TestSheet.render);
     println("******** Style **********");
     println(TestSheet.renderStyle());
     println("******** i18n **********");

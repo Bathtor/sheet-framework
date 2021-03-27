@@ -51,7 +51,7 @@ object Packager extends App {
   val sheetWorkerEnd = "</script>";
   val bufferSize = 100000;
 
-  val conf = new Conf(args);
+  val conf = new Conf(args.toIndexedSeq);
   val res = for {
     sheetName <- conf.sheet.toOption;
     sheet <- resolveSheet(sheetName);
@@ -73,7 +73,7 @@ object Packager extends App {
     }
   }
 
-  def packageSheet(sheet: Sheet, html: File, css: File, translation: File) {
+  def packageSheet(sheet: Sheet, html: File, css: File, translation: File): Unit = {
     val htmlWriter = new PrintWriter(html);
     val cssWriter = new PrintWriter(css);
     val translationWriter = new PrintWriter(translation);
@@ -88,7 +88,13 @@ object Packager extends App {
     }
   }
 
-  def packageSheet(sheet: Sheet, sheetworkers: String, javascript: File, html: File, css: File, translation: File) {
+  def packageSheet(sheet: Sheet,
+                   sheetworkers: String,
+                   javascript: File,
+                   html: File,
+                   css: File,
+                   translation: File
+  ): Unit = {
     val jsReader = new FileReader(javascript);
     val htmlWriter = new PrintWriter(html);
     val cssWriter = new PrintWriter(css);

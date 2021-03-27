@@ -34,7 +34,6 @@ import collection.mutable
 import scala.util.{Failure, Success}
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
-import com.lkroll.roll20.util.ListMultiMap
 import com.lkroll.roll20.facade.Roll20;
 
 case class SheetWorkerAPIException(msg: String) extends Throwable {
@@ -46,7 +45,7 @@ trait SheetWorkerRoot extends SheetWorker {
   def children: Seq[SheetWorker] = Seq.empty;
 
   @JSExport
-  def load() {
+  def load(): Unit = {
     val aggFieldS = children.foldLeft(this.fieldSerialisers)((acc, child) => acc ++ child.fieldSerialisers);
     val aggTypeS = children.foldLeft(this.typeSerialisers)((acc, child) => acc ++ child.typeSerialisers);
     this.fieldSerialisers = aggFieldS;
@@ -55,9 +54,8 @@ trait SheetWorkerRoot extends SheetWorker {
       child.fieldSerialisers = aggFieldS;
       child.typeSerialisers = aggTypeS;
     }
-    subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
-      {
-        val (k, callbacks) = t;
+    subscriptions.foreach {
+      case (k, callbacks) => {
         val f = (e: Roll20.EventInfo) => {
           callbacks.foreach { c =>
             c(e)
@@ -84,17 +82,15 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue;
 
-  val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]]
-    with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
+  val subscriptions = utils.SubscriptionMap.create;
 
   private[sheet] var fieldSerialisers = Map.empty[String, JSSerialiser[Any]];
   private[sheet] var typeSerialisers = List.empty[(Class[Any], JSSerialiser[Any])];
   val defaultSerialiser = JSDefaultSerialiser;
 
-  private[sheet] def internal_load() {
-    subscriptions.foreach { t: (String, Seq[Function1[Roll20.EventInfo, Unit]]) =>
-      {
-        val (k, callbacks) = t;
+  private[sheet] def internal_load(): Unit = {
+    subscriptions.foreach {
+      case (k, callbacks) => {
         val f = (e: Roll20.EventInfo) => {
           callbacks.foreach { c =>
             c(e)
@@ -108,11 +104,11 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   override def sheet: SheetWorker = this;
 
-  def register[T](f: FieldLike[T], s: JSSerialiser[T]) {
+  def register[T](f: FieldLike[T], s: JSSerialiser[T]): Unit = {
     fieldSerialisers += (f.accessor -> s.asInstanceOf[JSSerialiser[Any]]); // just throw away the type info
   }
 
-  def register[T: reflect.ClassTag](s: JSSerialiser[T]) {
+  def register[T: reflect.ClassTag](s: JSSerialiser[T]): Unit = {
     val staticClass: Class[Any] = reflect.classTag[T].runtimeClass.asInstanceOf[Class[Any]];
     typeSerialisers ::= (staticClass -> s.asInstanceOf[JSSerialiser[Any]])
   }
@@ -199,7 +195,7 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
               (values: js.Dictionary[Any]) => {
                 val data = DataAttributeValues(values.toMap);
                 val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
-                val output = attrs.mapValues(attrs => op.computeOutput(attrs));
+                val output = attrs.map(t => t._1 -> op.computeOutput(t._2)).toMap;
                 val outputDataFs = output.map { case (id, output) =>
                   output.map { case (values, cd) =>
                     (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
@@ -274,7 +270,7 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
     Roll20.setAttrs(valuesWithNames,
                     SetterOptions.silent(silent),
                     () => {
-                      p.success(); ()
+                      p.success(()); ()
                     }
     );
     //Roll20.setAttrs(valuesWithNames);
@@ -313,7 +309,7 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   }
 
   def onOpen(callback: => Unit): Unit = {
-    val f = callback _;
+    val f = () => callback;
     onOpen(_ => f());
   }
 

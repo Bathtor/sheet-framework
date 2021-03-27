@@ -37,11 +37,11 @@ trait Sheet extends Renderable {
 }
 
 trait SimpleSheet extends Sheet {
-  def main(): FieldGroup;
-  def style(): StyleSheet;
-  def externalStyles: Seq[URL] = Seq();
-  def translation(): SheetI18NDefaults;
-  override def render(): String = main.render().render;
+  def main: FieldGroup;
+  def style: StyleSheet;
+  def externalStyles: Seq[URL] = Seq.empty;
+  def translation: SheetI18NDefaults;
+  override def render: String = main.render().render;
   override def renderStyle(): String = {
     val es = externalStyles.map(styleURL => {
       val source = io.Source.fromURL(styleURL);
@@ -71,8 +71,8 @@ trait FieldGroup {
   def render(mode: RenderMode = RenderMode.Normal): Tag = {
     renderer.render(this, mode)
   }
-  def renderer(): GroupRenderer;
-  def members(): Seq[SheetElement];
+  def renderer: GroupRenderer;
+  def members: Seq[SheetElement];
 }
 
 object FieldGroup {

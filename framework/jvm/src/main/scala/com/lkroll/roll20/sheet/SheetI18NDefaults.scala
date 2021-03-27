@@ -81,10 +81,10 @@ trait SheetI18NDefaults extends Renderable {
     assert(complete);
   }
 
-  override def render(): String = {
+  override def render: String = {
     import org.codehaus.jettison.json.JSONObject;
     verify();
-    val sortedEntries = scala.collection.immutable.TreeMap(entries.toArray: _*)
+    val sortedEntries = scala.collection.immutable.TreeMap(entries.toIndexedSeq: _*)
     sortedEntries
       .map { case (k, v) =>
         s"""\"$k\":${JSONObject.quote(v)}"""
@@ -101,7 +101,7 @@ trait SheetI18NDefaults extends Renderable {
 case class SheetI18NDefaultsList(translations: List[SheetI18NDefaults]) extends SheetI18NDefaults {
   override def keys: SheetI18N = ???; // could write a combiner for this, but doesn't seem useful
 
-  override def render(): String = {
+  override def render: String = {
     import org.codehaus.jettison.json.JSONObject;
     translations.foreach { t =>
       t.verify();

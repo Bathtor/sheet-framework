@@ -5,10 +5,10 @@ ThisBuild / name := "Roll20 Sheet Model Root"
 
 ThisBuild / organization := "com.lkroll"
 
-ThisBuild / version := "0.11.5-SNAPSHOT"
+ThisBuild / version := "0.11.5"
 
 ThisBuild / scalaVersion := "2.13.5"
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5")
+ThisBuild / crossScalaVersions := Seq("2.12.13", "2.13.5")
 
 ThisBuild / licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
@@ -36,6 +36,11 @@ lazy val sheetModel = crossProject(JSPlatform, JVMPlatform).in(file(".")).
     name := "Roll20 Sheet Model",
     libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.3",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.5" % "test",
+    scalacOptions ++= Seq(
+      "-deprecation", 
+      "-feature", 
+      "-language:implicitConversions",
+      "-Xfatal-warnings")
   ).
   jvmSettings(
     // Add JVM-specific settings here

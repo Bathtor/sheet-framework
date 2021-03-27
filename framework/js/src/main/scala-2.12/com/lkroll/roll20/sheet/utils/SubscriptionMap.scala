@@ -22,24 +22,16 @@
  * SOFTWARE.
  *
  */
+package com.lkroll.roll20.sheet.utils
 
-package com.lkroll.roll20.sheet.model
+import scalajs.js
+import com.lkroll.roll20.facade.Roll20
+import com.lkroll.roll20.util.ListMultiMap
+import collection.mutable
 
-trait SheetModel extends Fields {
-  import FieldImplicits._
-
-  val versionField = text("version").editable(false);
-  val showOverlay = flag("show_overlay").default(false).editable(false);
-  val closeOverlay = flag("close_overlay").default(true);
-  val processingCount = number[Int]("processing_count").default(0).editable(false);
-  val characterName = text("character_name");
-  def version: String;
-  def outputTemplate: Option[APIOutputTemplate];
-
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
-  override def mapAccess(rowId: String, s: String): String = s;
-  override def mapAccess(s: String): String = s;
-  override def mapSelect(s: String): String = s;
-  override def mapMatcher(s: String): String => Boolean = _.equals(s);
-  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
+object SubscriptionMap {
+  def create: mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]]
+    with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]] =
+    new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]]
+      with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 }

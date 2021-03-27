@@ -22,24 +22,35 @@
  * SOFTWARE.
  *
  */
+package com.lkroll.roll20.sheet.utils
 
-package com.lkroll.roll20.sheet.model
+import scalajs.js
+import com.lkroll.roll20.facade.Roll20
+import com.lkroll.roll20.util.ListMultiMap
+import collection.mutable
 
-trait SheetModel extends Fields {
-  import FieldImplicits._
+object SubscriptionMap {
+  def create: SubscriptionMap = new SubscriptionMap();
+}
 
-  val versionField = text("version").editable(false);
-  val showOverlay = flag("show_overlay").default(false).editable(false);
-  val closeOverlay = flag("close_overlay").default(true);
-  val processingCount = number[Int]("processing_count").default(0).editable(false);
-  val characterName = text("character_name");
-  def version: String;
-  def outputTemplate: Option[APIOutputTemplate];
+class SubscriptionMap extends ListMultiMap[String, Function1[Roll20.EventInfo, Unit]] {
 
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
-  override def mapAccess(rowId: String, s: String): String = s;
-  override def mapAccess(s: String): String = s;
-  override def mapSelect(s: String): String = s;
-  override def mapMatcher(s: String): String => Boolean = _.equals(s);
-  override def mapMatcher(rowId: String, s: String): String => Boolean = _.equals(s);
+  private val underlying = new mutable.HashMap[String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]];
+
+  override def addOne(
+      elem: (String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]])
+  ): SubscriptionMap.this.type = {
+    underlying.addOne(elem);
+    this
+  };
+
+  def iterator: Iterator[(String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]])] = underlying.iterator;
+
+  def get(key: String): Option[mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]] = underlying.get(key);
+
+  def subtractOne(elem: String): SubscriptionMap.this.type = {
+    underlying.subtractOne(elem);
+    this
+  }
+
 }

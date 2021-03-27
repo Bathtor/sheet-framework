@@ -226,18 +226,19 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
     op
   }
 
-  private def bind(op: SheetWorkerOp)(implicit ec: ExecutionContext) {
+  private def bind(op: SheetWorkerOp)(implicit ec: ExecutionContext): Unit = {
     sheet.on(trigger,
              (e) => {
                sheet.log(s"Op triggered for: ${trigger}");
-               op().onFailure { case e: Throwable =>
-                 sheet.error(e)
+               op().onComplete {
+                 case Success(_) => () // ignore
+                 case Failure(e) => sheet.error(e)
                };
              }
     );
   }
 
-  private def bind(op: SheetWorkerOp, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext) {
+  private def bind(op: SheetWorkerOp, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): Unit = {
     sheet.on(trigger,
              (e) => {
                sheet.log(s"Op triggered for: ${trigger}");
@@ -303,7 +304,7 @@ sealed trait SheetWorkerOp {
   protected def getIfNecessary(input: Set[FieldLike[_]]): Future[AttributeValues] = {
     if (input.isEmpty) {
       sheet.log("Not getting any values as input fields were empty.");
-      Promise[AttributeValues].success(null).future
+      Promise[AttributeValues]().success(null).future
     } else {
       sheet.log(s"Getting values:\n${input.map(f => f.accessor).mkString(",")}")
       sheet.getAttrs(input);

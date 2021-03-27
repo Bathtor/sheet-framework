@@ -85,7 +85,7 @@ case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], origina
     extends AttributeValues {
 
   override def apply(attr: String): Any = {
-    val filtered = updates.filterKeys(_.accessor == attr);
+    val filtered = updates.filter(t => t._1.accessor == attr);
     if (!filtered.isEmpty) {
       return filtered.head._2
     } else {
