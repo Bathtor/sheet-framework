@@ -1,36 +1,46 @@
 enablePlugins(ScalaJSPlugin)
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-name := "Roll20 Sheet Model Root"
+ThisBuild / name := "Roll20 Sheet Model Root"
 
-organization in ThisBuild := "com.lkroll.roll20"
+ThisBuild / organization := "com.lkroll"
 
-version in ThisBuild := "0.11.3"
+ThisBuild / version := "0.11.4"
 
-scalaVersion in ThisBuild := "2.13.5"
-crossScalaVersions in ThisBuild := Seq("2.12.13", "2.13.5")
+ThisBuild / scalaVersion := "2.13.5"
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5")
 
-resolvers += "Apache" at "https://repo.maven.apache.org/maven2"
-resolvers += Resolver.bintrayRepo("lkrollcom", "maven")
-resolvers += Resolver.mavenLocal
+ThisBuild / licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
+
+ThisBuild / homepage := Some(url("https://github.com/Bathtor/sheet-framework"))
+ThisBuild / scmInfo := Some(
+                ScmInfo(url("https://github.com/Bathtor/sheet-framework"),
+                            "git@github.com:Bathtor/sheet-framework.git"))
+ThisBuild / developers := List(Developer(id = "lkroll",
+                             name = "Lars Kroll",
+                             email = "bathtor@googlemail.com",
+                             url = url("https://github.com/Bathtor")))
+publishMavenStyle := true
+
+// Add sonatype repository settings
+sonatypeCredentialHost := "s01.oss.sonatype.org"
+sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
+publishTo := sonatypePublishToBundle.value
 
 lazy val root = project.in(file(".")).
   aggregate(sheetModelJS, sheetModelJVM).
-  settings(
-    publish := {},
-    publishLocal := {}
-  )
+  settings(publish / skip := true)
 
 lazy val sheetModel = crossProject(JSPlatform, JVMPlatform).in(file(".")).
   settings(
     name := "Roll20 Sheet Model",
-    libraryDependencies += "com.lkroll.roll20" %%% "roll20-core" % "0.13.2",
+    libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.3",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.5" % "test",
   ).
   jvmSettings(
     // Add JVM-specific settings here
-    parallelExecution in Test := false,
-    logBuffered in Test := false
+    Test / parallelExecution := false,
+    Test / logBuffered := false
   ).
   jsSettings(
     // Add JS-specific settings here
@@ -38,8 +48,3 @@ lazy val sheetModel = crossProject(JSPlatform, JVMPlatform).in(file(".")).
 
 lazy val sheetModelJVM = sheetModel.jvm
 lazy val sheetModelJS = sheetModel.js
-
-licenses in ThisBuild += ("MIT", url("http://opensource.org/licenses/MIT"))
-bintrayPackageLabels in ThisBuild := Seq("roll20")
-bintrayOrganization in ThisBuild := Some("lkrollcom")
-bintrayRepository in ThisBuild := "maven"
