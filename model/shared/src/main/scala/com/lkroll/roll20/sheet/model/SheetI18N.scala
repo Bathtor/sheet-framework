@@ -44,8 +44,8 @@ trait SheetI18N {
   }
 
   def enum[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map {
-      case (enumval, keySuffix) => enumval -> s"${prefix}-$keySuffix"
+    val opts = options.map { case (enumval, keySuffix) =>
+      enumval -> s"${prefix}-$keySuffix"
     };
     return new OptionKey(opts);
   }

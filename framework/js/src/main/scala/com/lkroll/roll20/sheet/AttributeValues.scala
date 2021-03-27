@@ -81,7 +81,8 @@ case class RowAttributeValues(rowId: String, original: DataAttributeValues) exte
   }
 }
 
-case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], original: AttributeValues) extends AttributeValues {
+case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], original: AttributeValues)
+    extends AttributeValues {
 
   override def apply(attr: String): Any = {
     val filtered = updates.filterKeys(_.accessor == attr);
@@ -107,12 +108,14 @@ case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], origina
 
   override def toString: String = {
     val data = original match {
-      case DataAttributeValues(values) => values.map {
-        case (k, v) => s"$k -> $v -> ${apply(k)}"
-      }
-      case RowAttributeValues(rowId, original) => original.values.map {
-        case (k, v) => s"$k @ $rowId -> $v -> ${apply(k)}"
-      }
+      case DataAttributeValues(values) =>
+        values.map { case (k, v) =>
+          s"$k -> $v -> ${apply(k)}"
+        }
+      case RowAttributeValues(rowId, original) =>
+        original.values.map { case (k, v) =>
+          s"$k @ $rowId -> $v -> ${apply(k)}"
+        }
       case _ => Seq("Invalid")
     }
     s"ReadThroughAttributeValues(${data.mkString(",")})"

@@ -30,8 +30,7 @@ trait FieldImplicits extends CoreImplicits {
   implicit def stringToField(s: String)(implicit ctx: RenderingContext): VoidField = VoidField(ctx, s);
 }
 
-object FieldImplicits extends FieldImplicits {
-}
+object FieldImplicits extends FieldImplicits {}
 object FieldImplicitsLabels extends FieldImplicits {
   implicit val labelFields: LabelFields = AlwaysLabelFields;
 }

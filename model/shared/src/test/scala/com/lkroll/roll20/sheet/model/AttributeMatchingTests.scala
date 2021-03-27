@@ -1,8 +1,10 @@
 package com.lkroll.roll20.sheet.model
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 
-class AttributeMatchingTests extends FunSuite with Matchers {
+class AttributeMatchingTests extends AnyFunSuite with Matchers {
 
   val attrs = List(
     "repeating_testsec_-KkWmmPeaGP87vaZLpkt_testsec_testf",

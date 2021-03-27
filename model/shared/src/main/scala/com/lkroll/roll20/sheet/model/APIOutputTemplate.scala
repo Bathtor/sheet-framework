@@ -24,7 +24,7 @@
  */
 package com.lkroll.roll20.sheet.model
 
-import com.lkroll.roll20.core.{ TemplateCoreImplicits, TemplateRef }
+import com.lkroll.roll20.core.{TemplateCoreImplicits, TemplateRef}
 
 trait APIOutputTemplate extends TemplateCoreImplicits {
   def ref: TemplateRef;

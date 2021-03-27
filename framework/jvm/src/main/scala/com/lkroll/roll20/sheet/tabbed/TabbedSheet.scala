@@ -25,7 +25,7 @@
 
 package com.lkroll.roll20.sheet.tabbed
 
-import com.lkroll.roll20.sheet.model.{ APIOutputTemplate, SheetModel }
+import com.lkroll.roll20.sheet.model.{APIOutputTemplate, SheetModel}
 import com.lkroll.roll20.sheet.model.tabbed.TabbedI18N
 import scalatags.Text.all._
 import scalatags.stylesheet._
@@ -60,23 +60,41 @@ trait TabbedSheet extends Sheet {
       span(tt.processing),
       span(raw(" ")),
       input(`type` := "hidden", name := model.processingCount.name, value := model.processingCount.initialValue),
-      span(name := model.processingCount.name)),
+      span(name := model.processingCount.name)
+    ),
     p(tt.doNotClose),
-    p(label(
-      TabbedStyle.pseudoButtonWrapper,
-      input(`type` := "checkbox", name := model.closeOverlay.name, value := model.closeOverlay.initialValue, checked := "checked"),
-      span(tt.closeOverlay))));
+    p(
+      label(
+        TabbedStyle.pseudoButtonWrapper,
+        input(`type` := "checkbox",
+              name := model.closeOverlay.name,
+              value := model.closeOverlay.initialValue,
+              checked := "checked"
+        ),
+        span(tt.closeOverlay)
+      )
+    )
+  );
 
   override def render(): String = {
     val hiddenGroup = HiddenGroup(hidden);
-    val tabBar = div(TabbedStyle.nav, tabs.map(_.selector), div(
-      TabbedStyle.`mar-l-lg`,
-      input(`type` := "checkbox", name := "attr_edit_mode", TabbedStyle.`toggle-edit-mode`),
-      span(TabbedStyle.`toggle-edit-mode`, TabbedStyle.pictos, "p")));
+    val tabBar = div(
+      TabbedStyle.nav,
+      tabs.map(_.selector),
+      div(
+        TabbedStyle.`mar-l-lg`,
+        input(`type` := "checkbox", name := "attr_edit_mode", TabbedStyle.`toggle-edit-mode`),
+        span(TabbedStyle.`toggle-edit-mode`, TabbedStyle.pictos, "p")
+      )
+    );
     val pages = tabs.map(_.render());
     val sheetString = div(
       TabbedStyle.wrapper,
-      input(`type` := "hidden", name := model.showOverlay.name, value := model.showOverlay.initialValue, TabbedStyle.`show-modoverlay`),
+      input(`type` := "hidden",
+            name := model.showOverlay.name,
+            value := model.showOverlay.initialValue,
+            TabbedStyle.`show-modoverlay`
+      ),
       modOverlay,
       hiddenGroup.render(),
       input(`type` := "checkbox", name := "attr_edit_mode", `class` := "sheet-toggle-edit-mode sheet-hidden"),
@@ -84,7 +102,8 @@ trait TabbedSheet extends Sheet {
       pageToggle,
       tabBar,
       pages,
-      footer.render()).render;
+      footer.render()
+    ).render;
     val templatesString = templates.map(_.render).mkString("\n");
     sheetString + "\n" + templatesString;
   }
@@ -92,7 +111,9 @@ trait TabbedSheet extends Sheet {
     val tabStyle = tabs.map(_.css).mkString("\n");
     val es = (tabbedStyle :: externalStyles).map(styleURL => {
       val source = io.Source.fromURL(styleURL);
-      val sourceString = try CSSUtil.processFile(source) finally source.close();
+      val sourceString =
+        try CSSUtil.processFile(source)
+        finally source.close();
       val replacedString = colourScheme.replaceColoursInText(sourceString);
       replacedString
     });
@@ -112,15 +133,13 @@ trait TabbedSheet extends Sheet {
 case class Tab(id: Int, labeli18n: LabelsI18N, renderer: GroupRenderer, members: Seq[SheetElement]) extends FieldGroup {
   val sty = TabbedStyle;
 
-  def selector = label(
-    sty.pseudoButtonWrapper,
-    input(`type` := "radio", name := "attr_tab", value := id),
-    span(labeli18n.attrs));
+  def selector =
+    label(sty.pseudoButtonWrapper, input(`type` := "radio", name := "attr_tab", value := id), span(labeli18n.attrs));
 
   def css = s"input.${sty.pageToggle.name}:not([value='${id}']) ~ .sheet-tab${id} { display: none }";
 
-  override def render(mode: RenderMode = RenderMode.Normal): Tag = div(cls := s"sheet-tab${id}", sty.tab,
-    renderer.render(this, mode));
+  override def render(mode: RenderMode = RenderMode.Normal): Tag =
+    div(cls := s"sheet-tab${id}", sty.tab, renderer.render(this, mode));
 }
 
 object TabbedModel extends SheetModel {
@@ -142,20 +161,13 @@ object TabbedStyle extends CascadingStyleSheet {
 
   private def selectorSeq(s1: Selector, s2: Selector): Selector = new Selector(s1.built ++ Seq("+") ++ s2.built);
 
-  val wrapper = cls(
-    fontSize := "12px",
-    minWidth := "24rem",
-    position.relative);
+  val wrapper = cls(fontSize := "12px", minWidth := "24rem", position.relative);
 
-  val pictos = cls(
-    fontFamily := "Pictos",
-    fontSize := "1.3rem");
+  val pictos = cls(fontFamily := "Pictos", fontSize := "1.3rem");
 
-  val `toggle-edit-mode` = cls(
-    height := "2rem");
+  val `toggle-edit-mode` = cls(height := "2rem");
 
-  val `mar-l-lg` = cls(
-    marginLeft := "1rem");
+  val `mar-l-lg` = cls(marginLeft := "1rem");
 
   val edit = cls();
   val presentation = cls();
@@ -187,14 +199,14 @@ object TabbedStyle extends CascadingStyleSheet {
 
   val hidden = cls(display.none);
 
-  val nav = cls(
-    position.relative,
-    zIndex := 10,
-    display := "-webkit-box",
-    display := "-ms-flexbox",
-    display.flex,
-    //"-ms-flex-wrap" := "wrap",
-    flexWrap.wrap);
+  val nav = cls(position.relative,
+                zIndex := 10,
+                display := "-webkit-box",
+                display := "-ms-flexbox",
+                display.flex,
+                //"-ms-flex-wrap" := "wrap",
+                flexWrap.wrap
+  );
 }
 
 case class HiddenGroup(members: Seq[SheetElement]) extends FieldGroup {
@@ -202,8 +214,8 @@ case class HiddenGroup(members: Seq[SheetElement]) extends FieldGroup {
 }
 
 object HiddenRenderer extends GroupRenderer {
-  override def fieldRenderers: GroupRenderer.FieldRenderer = {
-    case (f, _) => input(`type` := "hidden", name := f.name, value := f.initialValue)
+  override def fieldRenderers: GroupRenderer.FieldRenderer = { case (f, _) =>
+    input(`type` := "hidden", name := f.name, value := f.initialValue)
   };
 
   override def fieldCombiner = { tags =>

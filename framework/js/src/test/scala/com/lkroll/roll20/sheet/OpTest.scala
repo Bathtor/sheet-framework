@@ -26,6 +26,8 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
 
@@ -65,7 +67,7 @@ object TestWorkers extends SheetWorker {
   val op2 = op1 andThen sideOp;
 }
 
-class OpTest extends FunSuite with Matchers {
+class OpTest extends AnyFunSuite with Matchers {
   test("MergedOp creation") {
     //println(s"Testing op: ${TestWorkers.op1}");
     TestWorkers.op1 shouldBe a[MergedOpChain];

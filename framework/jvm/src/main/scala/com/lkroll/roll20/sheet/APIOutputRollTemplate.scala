@@ -24,7 +24,7 @@
  */
 package com.lkroll.roll20.sheet
 
-import com.lkroll.roll20.core.{ CoreImplicits, TemplateRef, TemplateApplication, Renderable }
+import com.lkroll.roll20.core.{CoreImplicits, Renderable, TemplateApplication, TemplateRef}
 import com.lkroll.roll20.sheet.model.APIOutputTemplate
 
 sealed trait ContinuationType;
@@ -40,20 +40,31 @@ trait APIOutputRollTemplate extends RollTemplate with APIOutputTemplate {
 
   override def ref: TemplateRef = this.name;
 
-  def apply(title: String, content: String, continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
+  def apply(title: String,
+            content: String,
+            continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] = List(titleField <<= title, contentField <<= content);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }
 
-  def warning(title: String, content: String, continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
-    var apps: List[(TemplateField[Nothing], Renderable)] = List(titleField <<= title, contentField <<= content, isWarning <<= true);
+  def warning(title: String,
+              content: String,
+              continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
+    var apps: List[(TemplateField[Nothing], Renderable)] =
+      List(titleField <<= title, contentField <<= content, isWarning <<= true);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }
 
-  def error(title: String, content: String, continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
-    var apps: List[(TemplateField[Nothing], Renderable)] = List(titleField <<= title, contentField <<= content, isError <<= true);
+  def error(title: String,
+            content: String,
+            continuation: ContinuationType = ContinuationType.Full
+  ): TemplateApplication = {
+    var apps: List[(TemplateField[Nothing], Renderable)] =
+      List(titleField <<= title, contentField <<= content, isError <<= true);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }

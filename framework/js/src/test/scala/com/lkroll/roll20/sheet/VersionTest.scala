@@ -25,9 +25,11 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 import util.{ Success, Failure }
 
-class VersionTest extends FunSuite with Matchers {
+class VersionTest extends AnyFunSuite with Matchers {
   test("Simple version parsing") {
     val s = "1.2.3";
     SemanticVersion.fromString(s) match {

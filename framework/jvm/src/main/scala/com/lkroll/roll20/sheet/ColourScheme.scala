@@ -34,7 +34,7 @@ trait Colour {
 
 case class ColourNum(n: Int) extends Colour {
   override def css: String = {
-    val masked = (0xFFFFFF & n);
+    val masked = (0xffffff & n);
     "#%06X".format(masked);
   }
 }
@@ -112,21 +112,27 @@ trait ColourScheme {
     cf // change if colourToField changes!
   }
 
-  def alias(aliasKey: String, cf: ColourField): ColourField = alias(aliasKey, cf.key); // this will make sure you don't a field from another palette
+  def alias(aliasKey: String, cf: ColourField): ColourField =
+    alias(aliasKey, cf.key); // this will make sure you don't a field from another palette
 
-  def replaceColoursInText(input: String): String = ColourScheme.replacePattern.replaceAllIn(input, _ match {
-    case m if m.subgroups.size > 0 => this.get(m.subgroups(0)) match {
-      case Some(c) => c.css
-      case None => {
-        println(s"Found no match for placeholder ($m). Using the defaultColour.");
-        defaultColour.css
+  def replaceColoursInText(input: String): String =
+    ColourScheme.replacePattern.replaceAllIn(
+      input,
+      _ match {
+        case m if m.subgroups.size > 0 =>
+          this.get(m.subgroups(0)) match {
+            case Some(c) => c.css
+            case None => {
+              println(s"Found no match for placeholder ($m). Using the defaultColour.");
+              defaultColour.css
+            }
+          }
+        case m => {
+          println(s"Invalid match ($m). Using the defaultColour.");
+          defaultColour.css
+        }
       }
-    }
-    case m => {
-      println(s"Invalid match ($m). Using the defaultColour.");
-      defaultColour.css
-    }
-  });
+    );
 }
 
 object ColourScheme {
@@ -137,14 +143,16 @@ case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
 
   assert(data.label == "palette");
 
-  val source: String = data.child.flatMap {
-    case <url>{ text }</url> => Some(text.text)
-    case _                   => None
-  }.apply(0);
+  val source: String = data.child
+    .flatMap {
+      case <url>{text}</url> => Some(text.text)
+      case _                 => None
+    }
+    .apply(0);
 
   val colourSets = data.child.flatMap {
-    case cs @ <colorset>{ _* }</colorset> => Some(cs)
-    case x                                => None
+    case cs @ <colorset>{_*}</colorset> => Some(cs)
+    case x                              => None
   };
 
   def getColourModulo(setId: Int, colourId: Int): ColourField = {
@@ -165,11 +173,11 @@ case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
       println(s"Provided palette does not have a colour $colourId. Wrapping around.");
       colourSetCleaned(colourId % colourSetCleaned.size)
     }
-    rgb(
-      (colourNode \ "@id").text,
-      (colourNode \ "@r").text.toInt,
-      (colourNode \ "@g").text.toInt,
-      (colourNode \ "@b").text.toInt)
+    rgb((colourNode \ "@id").text,
+        (colourNode \ "@r").text.toInt,
+        (colourNode \ "@g").text.toInt,
+        (colourNode \ "@b").text.toInt
+    )
   }
 
   // *** Primary color:

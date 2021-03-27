@@ -50,8 +50,8 @@ trait GroupRenderer {
 
   def apply(elems: SheetElement*) = GroupWithRenderer(this, elems);
 
-  val defaultFieldRenderer: FieldRenderer = {
-    case (f, _) => span(name := f.name, visibility.hidden)
+  val defaultFieldRenderer: FieldRenderer = { case (f, _) =>
+    span(name := f.name, visibility.hidden)
   };
 
   val defaultFieldCombiner: FieldCombiner = { tags =>
@@ -87,8 +87,7 @@ trait GroupRenderer {
   }
 
   def renderRoll(roll: Button, e: Tag): Tag = {
-    button(`type` := "roll", name := roll.name, value := roll.roll.render,
-      e)
+    button(`type` := "roll", name := roll.name, value := roll.roll.render, e)
   }
 
   def render(fg: FieldGroup, mode: RenderMode = RenderMode.Normal): Tag = {
@@ -111,9 +110,10 @@ trait GroupRenderer {
     case LabelledElement(l, e)                   => renderLabelled(l, renderElement(e, mode, true))
     case EditOnlyElement(es)                     => renderEditWrapper(es.map(renderElement(_, RenderMode.Edit)))
     case PresentationOnlyElement(es)             => renderPresentationWrapper(es.map(renderElement(_, RenderMode.Presentation)))
-    case DualModeElement(edit, presentation)     => renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
-    case RollElement(roll, e) if labelled        => throw new RuntimeException("Do not label rolls!")
-    case RollElement(roll, e)                    => renderRoll(roll, renderElement(e, mode))
+    case DualModeElement(edit, presentation) =>
+      renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
+    case RollElement(roll, e) if labelled => throw new RuntimeException("Do not label rolls!")
+    case RollElement(roll, e)             => renderRoll(roll, renderElement(e, mode))
   }
 
   val fieldset = tag("fieldset");
@@ -124,8 +124,9 @@ object DefaultRenderer extends GroupRenderer {
   import GroupRenderer._
 
   override def fieldRenderers: FieldRenderer = {
-    case (b: Button, _)                      => p(button(`type` := "roll", name := b.name, value := b.roll.render))
-    case (f: AutocalcField[_], _)            => p(input(`type` := "text", name := f.name, value := f.initialValue, disabled := true))
+    case (b: Button, _) => p(button(`type` := "roll", name := b.name, value := b.roll.render))
+    case (f: AutocalcField[_], _) =>
+      p(input(`type` := "text", name := f.name, value := f.initialValue, disabled := true))
     case (f: Field[_], _) if f.editable()    => p(input(`type` := "text", name := f.name, value := f.initialValue))
     case (f: Field[_], _) if !(f.editable()) => p(span(name := f.name, f.initialValue))
   };

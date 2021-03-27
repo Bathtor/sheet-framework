@@ -26,6 +26,8 @@
 package com.lkroll.roll20.sheet
 
 import org.scalatest._
+import org.scalatest.funsuite._
+import org.scalatest.matchers.should.Matchers
 
 object TestPaletteData {
   val data = <palette>
@@ -66,7 +68,7 @@ object TestPalette extends XMLColorPalette(TestPaletteData.data) {
 
 }
 
-class ColourTest extends FunSuite with Matchers {
+class ColourTest extends AnyFunSuite with Matchers {
   test("Colours are right") {
     TestPalette.primaryShade0.css shouldBe "rgb(45, 136, 45)";
     TestPalette.complementShade3.css shouldBe "rgb(128, 21, 21)";

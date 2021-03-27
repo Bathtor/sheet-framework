@@ -28,10 +28,10 @@ package com.lkroll.roll20.sheet
 import scalajs.js;
 
 import js.annotation._
-import scala.scalajs.js.Dynamic.{ global => dynGlobal, literal => dynLiteral }
-import scala.concurrent.{ Future, Promise, ExecutionContext }
+import scala.scalajs.js.Dynamic.{global => dynGlobal, literal => dynLiteral}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import collection.mutable
-import scala.util.{ Success, Failure }
+import scala.util.{Failure, Success}
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.util.ListMultiMap
@@ -41,7 +41,6 @@ case class SheetWorkerAPIException(msg: String) extends Throwable {
   override def getMessage(): String = s"SheetWorkerAPIException($msg)";
 }
 
-@JSExportDescendentObjects
 trait SheetWorkerRoot extends SheetWorker {
 
   def children: Seq[SheetWorker] = Seq.empty;
@@ -60,7 +59,9 @@ trait SheetWorkerRoot extends SheetWorker {
       {
         val (k, callbacks) = t;
         val f = (e: Roll20.EventInfo) => {
-          callbacks.foreach { c => c(e) }
+          callbacks.foreach { c =>
+            c(e)
+          }
         }
         debug(s"${this.getClass.getName}: subscribing sheetworker on trigger: ${k}.");
         Roll20.on(k, f);
@@ -68,24 +69,23 @@ trait SheetWorkerRoot extends SheetWorker {
     }
     children.foreach(_.internal_load());
     debug("------ Registered Serialisers -------");
-    fieldSerialisers.foreach {
-      case (f, s) => debug(s"${f} -> ${s.getClass.getName}")
+    fieldSerialisers.foreach { case (f, s) =>
+      debug(s"${f} -> ${s.getClass.getName}")
     }
-    typeSerialisers.foreach {
-      case (t, s) => debug(s"${t} -> ${s.getClass.getName}")
+    typeSerialisers.foreach { case (t, s) =>
+      debug(s"${t} -> ${s.getClass.getName}")
     }
   }
 }
 
 trait SheetWorker extends SheetWorkerLogging with OpPartials {
-  import js.JSConverters._
-  import SheetWorkerTypeShorthands._
-  //import scala.concurrent.ExecutionContext.Implicits.global
-  //import scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow;
+  import js.JSConverters._;
+  import SheetWorkerTypeShorthands._;
 
-  implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.runNow;
+  implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue;
 
-  val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]] with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
+  val subscriptions = new mutable.HashMap[String, mutable.MutableList[Function1[Roll20.EventInfo, Unit]]]
+    with ListMultiMap[String, Function1[Roll20.EventInfo, Unit]];
 
   private[sheet] var fieldSerialisers = Map.empty[String, JSSerialiser[Any]];
   private[sheet] var typeSerialisers = List.empty[(Class[Any], JSSerialiser[Any])];
@@ -96,7 +96,9 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
       {
         val (k, callbacks) = t;
         val f = (e: Roll20.EventInfo) => {
-          callbacks.foreach { c => c(e) }
+          callbacks.foreach { c =>
+            c(e)
+          }
         }
         debug(s"${this.getClass.getName}: subscribing sheetworker on trigger: ${k}.");
         Roll20.on(k, f);
@@ -116,18 +118,21 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   }
 
   private def checkTypeHierarchies(cls: Class[_]): Option[JSSerialiser[Any]] = {
-    typeSerialisers.find({
-      case (targetCls, ser) => targetCls.isAssignableFrom(cls)
-    }).map(_._2)
+    typeSerialisers
+      .find({ case (targetCls, ser) =>
+        targetCls.isAssignableFrom(cls)
+      })
+      .map(_._2)
   }
 
   def serialise[T](f: FieldLike[T], v: T): js.Any = {
     fieldSerialisers.get(f.accessor) match {
       case Some(s) => s.serialise(v)
-      case None => checkTypeHierarchies(v.getClass()) match {
-        case Some(s) => s.serialise(v)
-        case None    => defaultSerialiser.serialise(v)
-      }
+      case None =>
+        checkTypeHierarchies(v.getClass()) match {
+          case Some(s) => s.serialise(v)
+          case None    => defaultSerialiser.serialise(v)
+        }
     }
   }
 
@@ -135,20 +140,29 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   def getRowAttrs(section: RepeatingSection, fields: Seq[FieldLike[_]]): Future[Map[String, RowAttributeValues]] = {
     val p = Promise[Map[String, RowAttributeValues]]();
-    Roll20.getSectionIDs(section.cls, (ids: js.Array[String]) => {
-      val attrNames = ids.map(id => fields.map(f => f.accessor(id))).flatten.toJSArray;
-      Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
-        val data = DataAttributeValues(values.toMap);
-        val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
-        p.success(attrs); ()
-      });
-    });
+    Roll20.getSectionIDs(
+      section.cls,
+      (ids: js.Array[String]) => {
+        val attrNames = ids.map(id => fields.map(f => f.accessor(id))).flatten.toJSArray;
+        Roll20.getAttrs(
+          attrNames,
+          (values: js.Dictionary[Any]) => {
+            val data = DataAttributeValues(values.toMap);
+            val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
+            p.success(attrs); ()
+          }
+        );
+      }
+    );
     p.future
   }
 
-  def foldRows[Acc, T](section: RepeatingSection, fields: FieldOpsWithFields[T],
-                       initialValue: Acc, f: (Acc, (String, T)) => Acc,
-                       r: Acc => Updates): Future[ChainingDecision] = {
+  def foldRows[Acc, T](section: RepeatingSection,
+                       fields: FieldOpsWithFields[T],
+                       initialValue: Acc,
+                       f: (Acc, (String, T)) => Acc,
+                       r: Acc => Updates
+  ): Future[ChainingDecision] = {
     val resF = for {
       rows <- getRowAttrs(section, fields.getFields)
     } yield {
@@ -173,60 +187,71 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   def forAllRows(section: RepeatingSection, op: SheetWorkerOp): Future[ChainingDecision] = {
     val p = Promise[ChainingDecision]();
-    Roll20.getSectionIDs(section.cls, (ids: js.Array[String]) => {
-      op match {
-        case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain | _: WritingNoMergeSheetWorkerOp[_] => {
-          val attrNames = ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
-          Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
-            val data = DataAttributeValues(values.toMap);
-            val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
-            val output = attrs.mapValues(attrs => op.computeOutput(attrs));
-            val outputDataFs = output.map {
-              case (id, output) => output.map {
-                case (values, cd) => (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
+    Roll20.getSectionIDs(
+      section.cls,
+      (ids: js.Array[String]) => {
+        op match {
+          case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain |
+              _: WritingNoMergeSheetWorkerOp[_] => {
+            val attrNames = ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
+            Roll20.getAttrs(
+              attrNames,
+              (values: js.Dictionary[Any]) => {
+                val data = DataAttributeValues(values.toMap);
+                val attrs = ids.map(id => (id -> RowAttributeValues(id, data))).toMap;
+                val output = attrs.mapValues(attrs => op.computeOutput(attrs));
+                val outputDataFs = output.map { case (id, output) =>
+                  output.map { case (values, cd) =>
+                    (values.map { case (f, v) => f.accessor(id) -> v.asInstanceOf[js.Any] }, cd)
+                  }
+                //
+                };
+                val outputDataF = Future.sequence(outputDataFs).map { outputData =>
+                  val emptyAcc: (Map[String, js.Any], ChainingDecision) = (Map.empty[String, js.Any], SkipChain);
+                  outputData.foldLeft(emptyAcc) { (acc, dataCD) =>
+                    val (mapAcc, cdAcc) = acc;
+                    val (data, cd) = dataCD;
+                    (mapAcc ++ data, cdAcc | cd)
+                  }
+                }
+                //.flatten.toMap.toJSDictionary;
+                outputDataF map { case (outputData, cd) =>
+                  Roll20.setAttrs(outputData.toJSDictionary,
+                                  SetterOptions.silent(true),
+                                  () => {
+                                    p.success(cd); ()
+                                  }
+                  )
+                };
+                ()
               }
-              //
-            };
-            val outputDataF = Future.sequence(outputDataFs).map { outputData =>
-              val emptyAcc: (Map[String, js.Any], ChainingDecision) = (Map.empty[String, js.Any], SkipChain);
-              outputData.foldLeft(emptyAcc) { (acc, dataCD) =>
-                val (mapAcc, cdAcc) = acc;
-                val (data, cd) = dataCD;
-                (mapAcc ++ data, cdAcc | cd)
+            );
+          }
+          case coc: ChainedOpChain => {
+            val emptyAcc: Future[ChainingDecision] = Future.successful(ExecuteChain);
+            val f = coc.operations.foldLeft(emptyAcc) { case (f, op) =>
+              f flatMap {
+                case ExecuteChain => forAllRows(section, op.lift())
+                case SkipChain    => Future.successful(SkipChain)
               }
-            }
-            //.flatten.toMap.toJSDictionary;
-            outputDataF map {
-              case (outputData, cd) =>
-                Roll20.setAttrs(outputData.toJSDictionary, SetterOptions.silent(true), () => {
-                  p.success(cd); ()
-                })
             };
-            ()
-          });
-        }
-        case coc: ChainedOpChain => {
-          val emptyAcc: Future[ChainingDecision] = Future.successful(ExecuteChain);
-          val f = coc.operations.foldLeft(emptyAcc) {
-            case (f, op) => f flatMap {
-              case ExecuteChain => forAllRows(section, op.lift())
-              case SkipChain    => Future.successful(SkipChain)
-            }
-          };
-          p.completeWith(f);
-        }
-      };
-      ()
-    });
+            p.completeWith(f);
+          }
+        };
+        ()
+      }
+    );
     p.future
   }
 
   def getAttrs(fields: Set[FieldLike[_]]): Future[AttributeValues] = {
     val attrNames: js.Array[String] = fields.map(_.accessor).toJSArray;
     val p = Promise[AttributeValues]();
-    Roll20.getAttrs(attrNames, (values: js.Dictionary[Any]) => {
-      p.success(DataAttributeValues(values.toMap)); ()
-    });
+    Roll20.getAttrs(attrNames,
+                    (values: js.Dictionary[Any]) => {
+                      p.success(DataAttributeValues(values.toMap)); ()
+                    }
+    );
     p.future
   }
 
@@ -239,14 +264,19 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   }
 
   def setAttrs(values: Map[FieldLike[Any], Any], silent: Boolean = true): Future[Unit] = {
-    val valuesWithNames = values.map({
-      case (f, v) => (f.accessor -> serialise(f, v))
-    }).toJSDictionary;
+    val valuesWithNames = values
+      .map({ case (f, v) =>
+        (f.accessor -> serialise(f, v))
+      })
+      .toJSDictionary;
     val p = Promise[Unit]();
     log(s"Setting attrs: ${valuesWithNames.mkString}");
-    Roll20.setAttrs(valuesWithNames, SetterOptions.silent(silent), () => {
-      p.success (); ()
-    });
+    Roll20.setAttrs(valuesWithNames,
+                    SetterOptions.silent(silent),
+                    () => {
+                      p.success(); ()
+                    }
+    );
     //Roll20.setAttrs(valuesWithNames);
     p.future
   }

@@ -25,7 +25,7 @@
 
 package com.lkroll.roll20.sheet
 
-import scala.scalajs.js.Dynamic.{ global => dynGlobal, literal => dynLiteral }
+import scala.scalajs.js.Dynamic.{global => dynGlobal, literal => dynLiteral}
 
 trait SheetWorkerLogging {
   def error(s: String): Unit = {
