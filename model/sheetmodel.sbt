@@ -5,7 +5,7 @@ ThisBuild / name := "Roll20 Sheet Model Root"
 
 ThisBuild / organization := "com.lkroll"
 
-ThisBuild / version := "0.11.4"
+ThisBuild / version := "0.11.5-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.13.5"
 ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5")
@@ -25,7 +25,7 @@ publishMavenStyle := true
 // Add sonatype repository settings
 sonatypeCredentialHost := "s01.oss.sonatype.org"
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
-publishTo := sonatypePublishToBundle.value
+ThisBuild / publishTo := sonatypePublishToBundle.value
 
 lazy val root = project.in(file(".")).
   aggregate(sheetModelJS, sheetModelJVM).
