@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 package com.lkroll.roll20.sheet
@@ -64,9 +64,7 @@ object TestPaletteData {
 
 }
 
-object TestPalette extends XMLColorPalette(TestPaletteData.data) {
-
-}
+object TestPalette extends XMLColorPalette(TestPaletteData.data) {}
 
 class ColourTest extends AnyFunSuite with Matchers {
   test("Colours are right") {
@@ -78,6 +76,6 @@ a {
 }
 """);
     println(replaced);
-    replaced should include ("rgb");
+    replaced should include("rgb");
   }
 }

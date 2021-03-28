@@ -20,7 +20,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- * 
+ *
  */
 
 package com.lkroll.roll20.sheet
@@ -56,9 +56,10 @@ object ExampleTemplate extends RollTemplate {
     rollTotal(roll, roll) {
       div(roll)
     },
-    allProps () { (k, v) =>
+    allProps() { (k, v) =>
       tr(td(k.frag), td(v.frag))
-    });
+    }
+  );
 }
 
 class TemplateTest extends AnyFunSuite with Matchers {
@@ -69,9 +70,11 @@ class TemplateTest extends AnyFunSuite with Matchers {
 
   test("Roll Template Usage") {
     println("******** Roll With Template **********");
-    println(ExampleTemplate(
-      ExampleTemplate.str <<= TestSheetModel.str,
-      ExampleTemplate.test <<= "testVal",
-      ExampleTemplate.roll <<= TestSheetModel.testRoll).render);
+    println(
+      ExampleTemplate(ExampleTemplate.str <<= TestSheetModel.str,
+                      ExampleTemplate.test <<= "testVal",
+                      ExampleTemplate.roll <<= TestSheetModel.testRoll
+      ).render
+    );
   }
 }

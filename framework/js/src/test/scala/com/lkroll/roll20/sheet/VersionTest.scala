@@ -27,17 +27,17 @@ package com.lkroll.roll20.sheet
 import org.scalatest._
 import org.scalatest.funsuite._
 import org.scalatest.matchers.should.Matchers
-import util.{ Success, Failure }
+import util.{Failure, Success}
 
 class VersionTest extends AnyFunSuite with Matchers {
   test("Simple version parsing") {
     val s = "1.2.3";
     SemanticVersion.fromString(s) match {
       case Success(v) => {
-        v.major should be (1);
-        v.minor should be (2);
-        v.patch should be (3);
-        v.snapshot should be (false);
+        v.major should be(1);
+        v.minor should be(2);
+        v.patch should be(3);
+        v.snapshot should be(false);
       }
       case Failure(e) => fail(e)
     }
@@ -57,10 +57,10 @@ class VersionTest extends AnyFunSuite with Matchers {
     val s = "1.2.3-SNAPSHOT";
     SemanticVersion.fromString(s) match {
       case Success(v) => {
-        v.major should be (1);
-        v.minor should be (2);
-        v.patch should be (3);
-        v.snapshot should be (true);
+        v.major should be(1);
+        v.minor should be(2);
+        v.patch should be(3);
+        v.snapshot should be(true);
       }
       case Failure(e) => fail(e)
     }

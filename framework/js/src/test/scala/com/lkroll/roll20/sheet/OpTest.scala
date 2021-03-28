@@ -48,12 +48,12 @@ object TestSheetModel extends SheetModel {
 object TestWorkers extends SheetWorker {
   import TestSheetModel._
 
-  private val ttt: Tuple2[Int, Int] => Seq[(FieldLike[Any], Any)] = {
-    case (t1, t2) => Seq(testIntermediate <<= t1 + t2);
+  private val ttt: Tuple2[Int, Int] => Seq[(FieldLike[Any], Any)] = { case (t1, t2) =>
+    Seq(testIntermediate <<= t1 + t2);
   }
 
-  val interOp = op(testIntermediate) update {
-    case i => Seq(testRes <<= i + 5)
+  val interOp = op(testIntermediate) update { case i =>
+    Seq(testRes <<= i + 5)
   }
 
   val sideOp = op(testIntermediate) { (o: Option[Int]) =>

@@ -12,16 +12,17 @@ class CSSTest extends AnyFunSuite with Matchers {
   test("CSS comments must be stripped") {
     val srcURL = this.getClass.getClassLoader.getResource("WEB-INF/tabbed.css");
     val source = io.Source.fromURL(srcURL);
-    val res = try {
-      val orig = source.mkString;
-      orig should include ("The MIT License (MIT)");
-      orig should include ("input.sheet-toggle-edit-mode");
-      CSSUtil.processString(orig)
-    } catch {
-      case e: Throwable => e.printStackTrace(System.err); fail()
-    } finally source.close();
-    res shouldNot include ("The MIT License (MIT)");
-    res should include ("input.sheet-toggle-edit-mode");
+    val res =
+      try {
+        val orig = source.mkString;
+        orig should include("The MIT License (MIT)");
+        orig should include("input.sheet-toggle-edit-mode");
+        CSSUtil.processString(orig)
+      } catch {
+        case e: Throwable => e.printStackTrace(System.err); fail()
+      } finally source.close();
+    res shouldNot include("The MIT License (MIT)");
+    res should include("input.sheet-toggle-edit-mode");
     println(res)
   }
 
@@ -47,6 +48,6 @@ class CSSTest extends AnyFunSuite with Matchers {
 """;
 
     val processed = CSSUtil.processString(str);
-    processed.trim should equal (expected.trim);
+    processed.trim should equal(expected.trim);
   }
 }

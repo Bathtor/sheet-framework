@@ -1,6 +1,8 @@
 Scala Framework for Roll20 Sheets
 =================================
 
+[![CI](https://github.com/Bathtor/sheet-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/Bathtor/sheet-framework/actions)
+
 - Sheet Model: [![Maven Central](https://img.shields.io/maven-central/v/com.lkroll/roll20-sheet-model_2.13)](https://search.maven.org/artifact/com.lkroll/roll20-sheet-model_2.13)
 - Sheet Framework: [![Maven Central](https://img.shields.io/maven-central/v/com.lkroll/roll20-sheet-framework_2.13)](https://search.maven.org/artifact/com.lkroll/roll20-sheet-framework_2.13)
 
