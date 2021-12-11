@@ -76,11 +76,26 @@ trait SheetWorkerRoot extends SheetWorker {
   }
 }
 
+// Roll our own implementation of this, since Scala.js deleted theirs.
+object RunNowExecutionContext extends scala.concurrent.ExecutionContextExecutor {
+
+  def execute(runnable: Runnable): Unit = {
+    try {
+      runnable.run()
+    } catch {
+      case t: Throwable => reportFailure(t)
+    }
+  }
+
+  def reportFailure(t: Throwable): Unit = t.printStackTrace()
+
+}
+
 trait SheetWorker extends SheetWorkerLogging with OpPartials {
   import js.JSConverters._;
   import SheetWorkerTypeShorthands._;
 
-  implicit val ec: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue;
+  implicit val ec: ExecutionContext = RunNowExecutionContext;
 
   val subscriptions = utils.SubscriptionMap.create;
 

@@ -23,42 +23,37 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testsheet
 
+import com.lkroll.roll20.sheet._
+import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
+import com.lkroll.roll20.testmodel._
+import scalatags.Text.all._
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+object CoreTab extends FieldGroup {
+  import SheetImplicits._
 
-  private[roll20] def allKeys = keys;
+  val char = TestCharModel;
+  val t = TestTranslation;
+  val sty = TestStyle;
 
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
+  val dynamicRenderer: GroupRenderer.FieldDualRenderer = (f, mode) => {
+    sup(span(name := f.name, SheetI18NAttrs.datai18nDynamic))
   }
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
+  val members: Seq[SheetElement] =
+    Seq(
+      span("Input:"),
+      input(`type` := "text", name := char.dynamicField.name, value := char.dynamicField.defaultValue.get),
+      br,
+      span("Output:"),
+      span(name := char.dynamicField.name),
+      br,
+      span("Dynamic:"),
+      char.dynamicField.like(dynamicRenderer)
+    );
 
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
+  override def renderer = CoreTabRenderer;
 
-}
-
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
 }

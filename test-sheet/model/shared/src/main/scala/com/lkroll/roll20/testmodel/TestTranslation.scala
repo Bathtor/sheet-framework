@@ -23,42 +23,21 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testmodel
 
-import com.lkroll.roll20.core._
+import com.lkroll.roll20.sheet.model._;
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+object TestTranslation extends SheetI18N {
+  val version = text("version");
+  val charName = text("character-name");
+  val author = text("author");
+  val github = text("github");
+  val note = text("note");
 
-  private[roll20] def allKeys = keys;
+  val core = text("core");
 
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
+  val showHideDescription = text("show-hide-description");
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
-
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
-
-}
-
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
+  val dynamicValueA = text("valuea")
+  val dynamicValueB = text("valueb")
 }

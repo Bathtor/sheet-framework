@@ -23,42 +23,32 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testsheet
 
-import com.lkroll.roll20.core._
+import com.lkroll.roll20.sheet._
+import com.lkroll.roll20.sheet.tabbed._
+import com.lkroll.roll20.sheet.model._
+import com.lkroll.roll20.testmodel.{TestTranslation => TranslationKeys, _}
+import scalatags.Text.all._
+import scalatags.stylesheet._
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+object TestSheet extends TabbedSheet {
+  import SheetImplicits._;
+  import Roll20Predef._;
 
-  private[roll20] def allKeys = keys;
+  val char = TestCharModel;
+  val t = TestTranslation;
+  val sty = TestStyle;
 
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
+  override def hidden = Seq[SheetElement](char.characterSheet);
+  override def header = Header;
+  override def tabs = Seq(core);
+  override def footer = Footer;
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
+  val core = tab(t.core, CoreTab);
 
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
-
-}
-
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
+  override def style: StyleSheet = TestStyle;
+  override def externalStyles = List(this.getClass.getClassLoader.getResource("WEB-INF/defaults.css"));
+  override def translation: SheetI18NDefaults = TestTranslation;
+  override def colourScheme = TestPalette;
 }

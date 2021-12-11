@@ -28,3 +28,4 @@ metals.sbt
 
 # VSCode
 *.code-workspace
+.vscode

@@ -23,42 +23,28 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testsheet
 
-import com.lkroll.roll20.core._
+import com.lkroll.roll20.sheet._
+import com.lkroll.roll20.sheet.model._
+import com.lkroll.roll20.testmodel.{TestTranslation => TranslationKeys, _}
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+object TestTranslation extends SheetI18NDefaults {
+  val keys = TranslationKeys;
 
-  private[roll20] def allKeys = keys;
+  val version = keys.version <~ "v";
+  val charName = keys.charName <~ "Character Name";
+  val author = keys.author <~ "Author";
+  val github = keys.github <~ "Github";
+  val note = keys.note <~ "Note";
 
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
+  val core = keys.core <~ "Core";
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
+  val showHideDescription = keys.showHideDescription <~ "Show/Hide Description";
 
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
+  val dynamicValueA = keys.dynamicValueA <~ "Value A Super"
+  val dynamicValueB = keys.dynamicValueB <~ "Value B Super"
 
-}
+  lazy val allFullOptions = Map.empty[Enumeration, OptionLabel]
 
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
 }

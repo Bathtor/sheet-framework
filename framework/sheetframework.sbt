@@ -5,10 +5,10 @@ ThisBuild / name := "Roll20 Sheet Framework Root"
 
 ThisBuild / organization := "com.lkroll"
 
-ThisBuild / version := "0.11.5"
+ThisBuild / version := "0.12.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.5"
-ThisBuild / crossScalaVersions := Seq("2.12.13", "2.13.5")
+ThisBuild / scalaVersion := "2.13.7"
+ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.7")
 
 ThisBuild / licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
@@ -38,7 +38,7 @@ lazy val sheetframework = crossProject(JSPlatform, JVMPlatform).in(file(".")).
   enablePlugins(BuildInfoPlugin).
   settings(
     name := "Roll20 Sheet Framework",
-    libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.9.+",
+    libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.11.0",
     libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.3",
     libraryDependencies += "com.lkroll" %%% "roll20-sheet-model" % version.value,
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.0" % "test",
@@ -55,17 +55,17 @@ lazy val sheetframework = crossProject(JSPlatform, JVMPlatform).in(file(".")).
     // Add JVM-specific settings here
     //libraryDependencies += "org.scala-js" %% "scalajs-stubs" % scalaJSVersion % "provided",
     //libraryDependencies += "org.scalactic" %% "scalactic" % "3.+",
-    libraryDependencies += "org.rogach" %% "scallop" % "3.+",
-    libraryDependencies += "com.lihaoyi" %% "upickle" % "1.3.+",
-    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.+",
-    libraryDependencies += "org.codehaus.jettison" % "jettison" % "1.+",
+    libraryDependencies += "org.rogach" %% "scallop" % "4.1.0",
+    libraryDependencies += "com.lihaoyi" %% "upickle" % "1.4.3",
+    libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
+    libraryDependencies += "org.codehaus.jettison" % "jettison" % "1.4.1",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
     parallelExecution in Test := false,
     logBuffered in Test := false
   ).
   jsSettings(
     // Add JS-specific settings here
-    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "1.1.+",
+    libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.0.0",
     libraryDependencies += "com.lkroll" %%% "roll20-sheet-facade" % "1.0.2" % "provided"
   )
 

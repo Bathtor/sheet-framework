@@ -23,42 +23,36 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testsheet
 
+import com.lkroll.roll20.facade.Roll20;
+import com.lkroll.roll20.facade.Roll20.EventInfo;
+import com.lkroll.roll20.sheet._
+import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.core._
+import com.lkroll.roll20.testmodel._
+import SheetWorkerTypeShorthands._
+import util.{Failure, Success}
+import concurrent.{ExecutionContext, Future, Promise}
+import scala.scalajs.js
+import scala.scalajs.js.annotation._
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+@JSExportTopLevel("TestSheetWorkers")
+object TestSheetWorkers extends SheetWorkerRoot {
 
-  private[roll20] def allKeys = keys;
+  override def children: Seq[SheetWorker] = Seq(tabbedWorker, TestUpdates);
 
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
+  lazy val tabbedWorker = TabbedWorker(TestCharModel, TestUpdates);
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
+  import TestCharModel._
 
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
+  register[ChatCommand](ChatSer);
+  register[Boolean](ToggleSer);
 
-}
+  onOpen {
+    log("TestSheet: Sheet workers loading...");
+    //versionLoadOp();
+    ()
+  };
 
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
 }

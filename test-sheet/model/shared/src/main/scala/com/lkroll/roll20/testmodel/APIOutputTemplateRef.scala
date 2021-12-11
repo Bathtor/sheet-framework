@@ -22,43 +22,12 @@
  * SOFTWARE.
  *
  */
+package com.lkroll.roll20.testmodel
 
-package com.lkroll.roll20.sheet.model
+import com.lkroll.roll20.core.TemplateRef
+import com.lkroll.roll20.sheet.model.APIOutputTemplate
 
-import com.lkroll.roll20.core._
-
-trait SheetI18N {
-  private var keys = List.empty[String];
-
-  private[roll20] def allKeys = keys;
-
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
-
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
-
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
-
-}
-
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
-
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
+object APIOutputTemplateRef extends APIOutputTemplate {
+  val name = "test-apioutput";
+  override def ref: TemplateRef = name;
 }

@@ -23,42 +23,31 @@
  *
  */
 
-package com.lkroll.roll20.sheet.model
+package com.lkroll.roll20.testmodel
 
-import com.lkroll.roll20.core._
+import com.lkroll.roll20.sheet.model._;
+import com.lkroll.roll20.core._;
 
-trait SheetI18N {
-  private var keys = List.empty[String];
+object TestCharModel extends SheetModel {
+  import FieldImplicitsLabels._
 
-  private[roll20] def allKeys = keys;
-
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
+  implicit class LabelledField[T: Numeric](f: FieldLike[T]) {
+    def labelled: RollExprs.LabelledRoll[T] =
+      RollExprs.LabelledRoll(f.arith(), f.attr);
   }
 
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
+  override def version = BuildInfo.version;
 
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
+  override def outputTemplate: Option[APIOutputTemplate] = Some(APIOutputTemplateRef);
 
-}
+  implicit val ctx = this.renderingContext;
 
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
-}
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
+  val sheetName = "TestSheet";
+  val author = "Lars Kroll";
+  val github = "https://github.com/Bathtor/sheet-framework";
 
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
+  val characterSheet = text("character_sheet").default(s"$sheetName v???");
+
+  val dynamicField = "dynamic_field".editable(true).options("valuea", "valueb").default("valuea")
+
 }

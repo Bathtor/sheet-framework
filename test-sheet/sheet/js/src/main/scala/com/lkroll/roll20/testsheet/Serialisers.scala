@@ -22,43 +22,20 @@
  * SOFTWARE.
  *
  */
+package com.lkroll.roll20.testsheet
 
-package com.lkroll.roll20.sheet.model
-
+import scalajs.js
+import com.lkroll.roll20.sheet._
 import com.lkroll.roll20.core._
 
-trait SheetI18N {
-  private var keys = List.empty[String];
-
-  private[roll20] def allKeys = keys;
-
-  def text(key: String): DataKey = {
-    keys ::= key;
-    DataKey(key)
-  }
-
-  def abbr(abbrKey: String, fullKey: String): AbbreviationKey = {
-    keys ::= abbrKey;
-    keys ::= fullKey;
-    AbbreviationKey(abbrKey, fullKey)
-  }
-
-  def enumeration[T <: Enumeration](prefix: String, options: Map[T#Value, String]): OptionKey[T] = {
-    val opts = options.map { case (enumval, keySuffix) =>
-      enumval -> s"${prefix}-$keySuffix"
-    };
-    return new OptionKey(opts);
-  }
-
+object ReporderSer extends JSSerialiser[Array[String]] {
+  override def serialise(o: Array[String]): js.Any = o.mkString(",");
 }
 
-sealed trait I18NKey;
-case class DataKey(key: String) extends I18NKey {
-  def dynamic: DynamicLabel = DynamicLabel(this);
+object ChatSer extends JSSerialiser[ChatCommand] {
+  override def serialise(o: ChatCommand): js.Any = o.render;
 }
-case class AbbreviationKey(abbrKey: String, fullKey: String) extends I18NKey;
-case class OptionKey[T <: Enumeration](options: Map[T#Value, String]) extends I18NKey;
 
-case class DynamicLabel(key: DataKey) extends Renderable {
-  override def render: String = s"^{${key.key}}";
+object ToggleSer extends JSSerialiser[Boolean] {
+  override def serialise(o: Boolean): js.Any = if (o) "on" else "0";
 }

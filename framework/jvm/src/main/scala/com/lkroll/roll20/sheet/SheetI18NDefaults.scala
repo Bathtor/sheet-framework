@@ -51,7 +51,7 @@ trait SheetI18NDefaults extends Renderable {
     Abbreviation(abbrL, fullL.title)
   }
 
-  def enum[T <: Enumeration](keys: OptionKey[T], defaults: T#Value => String): OptionLabel = {
+  def enumeration[T <: Enumeration](keys: OptionKey[T], defaults: T#Value => String): OptionLabel = {
     val opts = keys.options.map { case (enumval, key) =>
       enumval.toString -> text(DataKey(key), defaults(enumval))
     };
@@ -67,7 +67,7 @@ trait SheetI18NDefaults extends Renderable {
   }
 
   implicit class AugmentedOptionKey[T <: Enumeration](o: OptionKey[T]) {
-    def <~(defaults: T#Value => String): OptionLabel = enum(o, defaults);
+    def <~(defaults: T#Value => String): OptionLabel = enumeration(o, defaults);
   }
 
   def verify(): Unit = {

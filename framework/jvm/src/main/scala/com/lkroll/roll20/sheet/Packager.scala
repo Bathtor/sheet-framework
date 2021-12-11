@@ -111,7 +111,7 @@ object Packager extends App {
         read = jsReader.read(buffer);
       }
       println("Finished writing javascript.");
-      htmlWriter.println(s"$sheetworkers().load();");
+      htmlWriter.println(s"$sheetworkers.load();");
       htmlWriter.println(sheetWorkerEnd);
       cssWriter.write(sheet.renderStyle());
       translationWriter.write(sheet.renderTranslation());

@@ -79,7 +79,7 @@ case class EnumField(ctx: RenderingContext,
                      attr: String,
                      defaultValue: Option[String],
                      options: Set[String],
-                     enum: Option[Enumeration],
+                     enumeration: Option[Enumeration],
                      editable: Boolean = false
 ) extends Field[String] {
   type F = EnumField
@@ -92,16 +92,16 @@ case class EnumField(ctx: RenderingContext,
       options.head
     };
 
-  override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, enum, editable);
+  override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, enumeration, editable);
   def default(s: Any): EnumField =
     EnumField(ctx,
               attr,
               Some(s.toString()),
               options,
-              enum,
+              enumeration,
               editable
     ); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
-  override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, enum, b);
+  override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, enumeration, b);
 }
 
 case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[Void] = None, editable: Boolean = true)
