@@ -26,9 +26,9 @@
 package com.lkroll.roll20.sheet
 
 import scalatags.Text.all._
-import scalatags.stylesheet._
+import com.lkroll.roll20.sheet.stylesheet._
 
-case class DivRenderer(style: Seq[Cls]) extends GroupRenderer {
+case class DivRenderer(style: Seq[ClassSelector]) extends GroupRenderer {
 
   import GroupRenderer._
 
@@ -36,6 +36,13 @@ case class DivRenderer(style: Seq[Cls]) extends GroupRenderer {
   override def fieldCombiner: FieldCombiner = { tags =>
     div(style, tags)
   };
+}
+
+object Roll20Style extends SheetStyleSheet {
+  val `3colrow` = cls("3colrow");
+  val `2colrow` = cls("2colrow");
+  val row = cls("row");
+  val col = cls("col");
 }
 
 object Roll20Predef {

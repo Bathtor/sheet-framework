@@ -43,9 +43,10 @@ trait TabbedSheet extends Sheet {
 
   def style: StyleSheet;
   def colourScheme: ColourScheme;
-  def externalStyles: List[URL] = List();
+  def externalStyles: List[URL] = Nil;
+  def fontImports: List[String] = Nil;
   def translation: SheetI18NDefaults;
-  def templates: List[RollTemplate] = List();
+  def templates: List[RollTemplate] = Nil;
 
   def pageToggle = input(`type` := "hidden", TabbedStyle.pageToggle, name := "attr_tab", value := 0)
 
@@ -107,6 +108,8 @@ trait TabbedSheet extends Sheet {
     sheetString + "\n" + templatesString;
   }
   override def renderStyle(): String = {
+    val familyString = fontImports.map(_.replaceAll(" ", "+")).mkString("|")
+    val fontImportStatement = s"@import url('https://fonts.googleapis.com/css?family=$familyString&display=swap');"
     val tabStyle = tabs.map(_.css).mkString("\n");
     val es = (tabbedStyle :: externalStyles).map(styleURL => {
       val source = io.Source.fromURL(styleURL);
@@ -116,7 +119,8 @@ trait TabbedSheet extends Sheet {
       val replacedString = colourScheme.replaceColoursInText(sourceString);
       replacedString
     });
-    (es ++ (tabStyle :: List(TabbedStyle, style).map(_.styleSheetText))).mkString("\n")
+    val tabStyleText = tabStyle :: List(TabbedStyle, style).map(_.styleSheetText)
+    (fontImportStatement :: es ++ tabStyleText).mkString("\n")
   };
   override def renderTranslation(): String = (TabbedI18NDefaults ++ translation).render;
 

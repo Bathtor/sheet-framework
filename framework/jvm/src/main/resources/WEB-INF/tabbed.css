@@ -23,28 +23,28 @@
  * 
  */
 
-.sheet-visibility-hidden,
-input.sheet-toggle-edit-mode:not(:checked)~div .sheet-visibility-hidden-in-presentation {
+.charsheet .sheet-visibility-hidden,
+.charsheet input.sheet-toggle-edit-mode:not(:checked)~div .sheet-visibility-hidden-in-presentation {
     visibility: hidden!important;
 }
 
-input.sheet-toggle-edit-mode:not(:checked)~div .repcontrol,
-input.sheet-toggle-edit-mode:not(:checked)~div .sheet-edit,
-input.sheet-toggle-edit-mode:checked~div .sheet-presentation {
+.charsheet input.sheet-toggle-edit-mode:not(:checked)~div .repcontrol,
+.charsheet input.sheet-toggle-edit-mode:not(:checked)~div .sheet-edit,
+.charsheet input.sheet-toggle-edit-mode:checked~div .sheet-presentation {
     display: none;
 }
 
-input.sheet-toggle-edit-mode:checked+span.sheet-toggle-edit-mode {
+.charsheet input.sheet-toggle-edit-mode:checked+span.sheet-toggle-edit-mode {
     text-shadow: -1px 0 ${text-shadow}, 0 1px ${text-shadow}, 1px 0 ${text-shadow}, 0 -1px ${text-shadow};
     background-color: transparent;
     color: ${toggle-checked-text};
 }
 
-input.sheet-toggle-edit-mode {
+.charsheet input.sheet-toggle-edit-mode {
   margin-top: 0px;
 }
 
-span.sheet-toggle-edit-mode {
+.charsheet span.sheet-toggle-edit-mode {
     text-shadow: -1px 0 ${text-shadow}, 0 1px ${text-shadow}, 1px 0 ${text-shadow}, 0 -1px ${text-shadow};
     background-color: transparent;
     color: ${toggle-span-text};
@@ -62,7 +62,7 @@ span.sheet-toggle-edit-mode {
     vertical-align: top;
 }
 
-input.sheet-toggle-edit-mode {
+.charsheet input.sheet-toggle-edit-mode {
     cursor: pointer;
     opacity: 0;
     position: relative;
@@ -77,27 +77,27 @@ input.sheet-toggle-edit-mode {
     width: 2.3rem;
 }
 
-input.sheet-toggle-edit-mode:checked~div input,
-input.sheet-toggle-edit-mode:checked~div select,
-input.sheet-toggle-edit-mode:checked~div textarea {
+.charsheet input.sheet-toggle-edit-mode:checked~div input,
+.charsheet input.sheet-toggle-edit-mode:checked~div select,
+.charsheet input.sheet-toggle-edit-mode:checked~div textarea {
     background-color: ${edit-mode-background}
 }
 
-.sheet-pseudoButtonWrapper{
+.charsheet .sheet-pseudoButtonWrapper{
   cursor: pointer;
   display: inline-block;
   margin: 0 1px;
 }
-.sheet-pseudoButtonWrapper label{
+.charsheet label.sheet-pseudoButtonWrapper{
   width: auto;
 }
-.sheet-pseudoButtonWrapper input{
+.charsheet .sheet-pseudoButtonWrapper input{
   display: none;
 }
-.sheet-pseudoButtonWrapper input:checked + span{
+.charsheet .sheet-pseudoButtonWrapper input:checked + span{
   background-color: ${checked-button-wrapper-background};
 }
-.sheet-pseudoButtonWrapper span{
+.charsheet .sheet-pseudoButtonWrapper span{
   background-color: ${button-wrapper-background};
   border-radius: 3px;
   color: ${button-wrapper};
@@ -106,11 +106,11 @@ input.sheet-toggle-edit-mode:checked~div textarea {
   text-align: center;
 }
 
-.sheet-show-modoverlay:not([value='0'])~.sheet-modoverlay {
+.charsheet .sheet-show-modoverlay:not([value='0'])~.sheet-modoverlay {
     display: block;
 }
 
-.sheet-modoverlay {
+.charsheet .sheet-modoverlay {
     background-color: ${overlay-background};
     color: ${overlay-text};
     display: none;
