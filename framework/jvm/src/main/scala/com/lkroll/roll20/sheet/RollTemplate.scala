@@ -35,7 +35,8 @@ trait RollTemplate extends Renderable {
 
   def name: String;
   def content: Tag;
-  override def render: String = rolltemplate(`class` := s"sheet-rolltemplate-${name}", content).render;
+  override def render: String =
+    rolltemplate(`class` := s"sheet-rolltemplate-${name}", content).render;
   def apply(data: (TemplateField[Nothing], Renderable)*): TemplateApplication =
     MapTemplateApplication(this, data.toMap);
 
@@ -53,7 +54,10 @@ trait RollTemplate extends Renderable {
     Seq[Modifier](start, body, end)
   }
 
-  def switchExists(f: TemplateField[Nothing], ifexists: => Modifier, ifnotexists: => Modifier): Modifier = {
+  def switchExists(
+      f: TemplateField[Nothing],
+      ifexists: => Modifier,
+      ifnotexists: => Modifier): Modifier = {
     val helper = f.name;
     val startIf = raw(s"{{#${helper}}}");
     val startIfNot = raw(s"{{^${helper}}}");
@@ -77,23 +81,27 @@ trait RollTemplate extends Renderable {
   def rollWasFumble[T](f: TemplateField[RollField[T]]) = RollWasFumble(f);
 
   def rollTotal[T](f: TemplateField[RollField[T]], cp: T) = RollTotal(f, Left(cp));
-  def rollTotal[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) = RollTotal(f, Right(cp));
+  def rollTotal[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) =
+    RollTotal(f, Right(cp));
 
   def rollGreater[T](f: TemplateField[RollField[T]], cp: T) = RollGreater(f, Left(cp));
-  def rollGreater[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) = RollGreater(f, Right(cp));
+  def rollGreater[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) =
+    RollGreater(f, Right(cp));
 
   def rollLess[T](f: TemplateField[RollField[T]], cp: T) = RollLess(f, Left(cp));
-  def rollLess[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) = RollLess(f, Right(cp));
+  def rollLess[T](f: TemplateField[RollField[T]], cp: TemplateField[RollField[T]]) =
+    RollLess(f, Right(cp));
 
-  def rollBetween[T](f: TemplateField[RollField[T]], lcp: T, hcp: T) = RollBetween(f, Left(lcp), Left(hcp));
+  def rollBetween[T](f: TemplateField[RollField[T]], lcp: T, hcp: T) =
+    RollBetween(f, Left(lcp), Left(hcp));
   def rollBetween[T](f: TemplateField[RollField[T]], lcp: T, hcp: TemplateField[RollField[T]]) =
     RollBetween(f, Left(lcp), Right(hcp));
   def rollBetween[T](f: TemplateField[RollField[T]], lcp: TemplateField[RollField[T]], hcp: T) =
     RollBetween(f, Right(lcp), Left(hcp));
-  def rollBetween[T](f: TemplateField[RollField[T]],
-                     lcp: TemplateField[RollField[T]],
-                     hcp: TemplateField[RollField[T]]
-  ) = RollBetween(f, Right(lcp), Right(hcp));
+  def rollBetween[T](
+      f: TemplateField[RollField[T]],
+      lcp: TemplateField[RollField[T]],
+      hcp: TemplateField[RollField[T]]) = RollBetween(f, Right(lcp), Right(hcp));
 
   def any(s: String) = AnyField(s);
 
@@ -139,8 +147,10 @@ object RollTemplate {
     override def render: String = s"rollWasFumble() ${f.name}";
   }
 
-  case class RollTotal[T](f: TemplateField[RollField[T]], cpE: Either[T, TemplateField[RollField[T]]])
-      extends HelperFunc {
+  case class RollTotal[T](
+      f: TemplateField[RollField[T]],
+      cpE: Either[T, TemplateField[RollField[T]]])
+    extends HelperFunc {
     val name = "rollTotal()";
     override def render: String = cpE match {
       case Left(cp)   => s"$name ${f.name} ${cp}";
@@ -148,8 +158,10 @@ object RollTemplate {
     }
   }
 
-  case class RollGreater[T](f: TemplateField[RollField[T]], cpE: Either[T, TemplateField[RollField[T]]])
-      extends HelperFunc {
+  case class RollGreater[T](
+      f: TemplateField[RollField[T]],
+      cpE: Either[T, TemplateField[RollField[T]]])
+    extends HelperFunc {
     val name = "rollGreater()";
     override def render: String = cpE match {
       case Left(cp)   => s"$name ${f.name} ${cp}";
@@ -157,8 +169,10 @@ object RollTemplate {
     }
   }
 
-  case class RollLess[T](f: TemplateField[RollField[T]], cpE: Either[T, TemplateField[RollField[T]]])
-      extends HelperFunc {
+  case class RollLess[T](
+      f: TemplateField[RollField[T]],
+      cpE: Either[T, TemplateField[RollField[T]]])
+    extends HelperFunc {
     val name = "rollLess()";
     override def render: String = cpE match {
       case Left(cp)   => s"$name ${f.name} ${cp}";
@@ -166,10 +180,11 @@ object RollTemplate {
     }
   }
 
-  case class RollBetween[T](f: TemplateField[RollField[T]],
-                            lcpE: Either[T, TemplateField[RollField[T]]],
-                            hcpE: Either[T, TemplateField[RollField[T]]]
-  ) extends HelperFunc {
+  case class RollBetween[T](
+      f: TemplateField[RollField[T]],
+      lcpE: Either[T, TemplateField[RollField[T]]],
+      hcpE: Either[T, TemplateField[RollField[T]]])
+    extends HelperFunc {
     val name = "rollBetween()";
     override def render: String = {
       val lcp: String = lcpE match {
@@ -199,7 +214,7 @@ object TemplateFields {
   case class DirectField[T](name: String) extends TemplateField[T] {}
 
   case class RollableField[T](name: String) extends TemplateField[RollField[T]] {
-    //override def <<=[V <: RollField[T]](v: V)(implicit f: V => Renderable): (TemplateField[RollField[T]], Renderable) = (this -> v.inline);
+    // override def <<=[V <: RollField[T]](v: V)(implicit f: V => Renderable): (TemplateField[RollField[T]], Renderable) = (this -> v.inline);
   }
 
   case class AttributeField[T](name: String) extends TemplateField[Field[T]] {}
@@ -217,8 +232,10 @@ object TemplateFields {
   case class ButtonField(name: String) extends TemplateField[CommandButton] {}
 }
 
-case class MapTemplateApplication(template: RollTemplate, data: Map[TemplateField[Nothing], Renderable])
-    extends TemplateApplication {
+case class MapTemplateApplication(
+    template: RollTemplate,
+    data: Map[TemplateField[Nothing], Renderable])
+  extends TemplateApplication {
   override def render: String =
     data
       .map({ case (k, v) =>

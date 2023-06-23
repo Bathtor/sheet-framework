@@ -24,72 +24,78 @@
  */
 package com.lkroll.roll20.sheet.stylesheet
 
-import scalatags.Text.all._
+import scalatags.Text.tags._
+
 import com.lkroll.roll20.core.Renderable
 
+case class EmbeddedCss(cssText: String)
+
 class StyleContext(val selector: Selector) {
-  private var children: List[Style] = Nil;
-  private var styles: Map[StyleAttribute, StyleValue] = Map.empty;
-  private var darkStyles: Map[StyleAttribute, StyleValue] = Map.empty;
-  private var lightStyles: Map[StyleAttribute, StyleValue] = Map.empty;
+
+  implicit val attributeOrdering: Ordering[StyleAttribute] =
+    Ordering.by[StyleAttribute, String](_.render);
+
+  protected var children: List[Style] = Nil;
+  protected var styles: List[(StyleAttribute, StyleValue)] = Nil;
 
   def addChild(child: Style): Unit = {
     children ::= child;
   }
 
   def addStyle(attr: StyleAttribute, value: StyleValue): Unit = {
-    styles += attr -> value;
+    styles ::= attr -> value;
   }
 
-  def addDarkStyle(attr: StyleAttribute, value: StyleValue): Unit = {
-    darkStyles += attr -> value;
+  def addDarkStyle(attr: StyleAttribute, value: StyleValue): Unit = throw new NotImplementedError(
+    "Do not use dark/light style rules in nested style rules."
+  );
+
+  def addLightStyle(attr: StyleAttribute, value: StyleValue): Unit = throw new NotImplementedError(
+    "Do not use dark/light style rules in nested style rules."
+  );
+
+  def result(): List[Style] = {
+    Style(selector, children, styles) :: Nil
+  }
+}
+
+class RootStyleContext(_selector: Selector) extends StyleContext(_selector) {
+
+  private var darkStyles: List[(StyleAttribute, StyleValue)] = Nil;
+  private var lightStyles: List[(StyleAttribute, StyleValue)] = Nil;
+
+  override def addDarkStyle(attr: StyleAttribute, value: StyleValue): Unit = {
+    darkStyles ::= attr -> value;
   }
 
-  def addLightStyle(attr: StyleAttribute, value: StyleValue): Unit = {
-    lightStyles += attr -> value;
+  override def addLightStyle(attr: StyleAttribute, value: StyleValue): Unit = {
+    lightStyles ::= attr -> value;
   }
 
-  def result(cascading: Boolean): List[Style] = {
+  override def result(): List[Style] = {
     import SpecialSelectors.Roll20._
-    if (cascading) {
-      // We don't allow light/dark mode in cascading rules.
-      // Prepend no prefix to cascading rules, since they inherit the parent prefix.
-      Style(selector, children, styles) :: Nil
+    // reverse all the styles so they override eachother in the expected order.
+    val dark = if (darkStyles.isEmpty) {
+      Nil
     } else {
-      val dark = if (darkStyles.isEmpty) {
-        Nil
-      } else {
-        List(Style(selector.prefixWith(DARK_MODE containing CHARSHEET), Nil, darkStyles))
-      };
-      val light = if (lightStyles.isEmpty) {
-        Nil
-      } else {
-        List(Style(selector.prefixWith(CHARSHEET), Nil, lightStyles))
-      };
-      val others = Style(selector.prefixWith(CHARSHEET), children, styles) :: Nil
-      // dark style needs to come last to override the others.
-      others ++ light ++ dark
-    }
+      List(Style(selector.prefixWith(DARK_MODE / CHARSHEET), Nil, darkStyles.reverse))
+    };
+    val light = if (lightStyles.isEmpty) {
+      Nil
+    } else {
+      List(Style(selector.prefixWith(CHARSHEET), Nil, lightStyles.reverse))
+    };
+    val others = Style(selector.prefixWith(CHARSHEET), children, styles.reverse) :: Nil
+    // dark style needs to come last to override the others.
+    others ++ light ++ dark
   }
 }
 
-trait StyleAttribute extends Renderable {
-  def :-(value: StyleValue)(implicit ctx: StyleContext): Unit = {
-    assert(ctx != null, "Assigning values to attribues is only legal within a style block.");
-    ctx.addStyle(this, value);
-  }
-  def :-(value: DualModeValue)(implicit ctx: StyleContext): Unit = {
-    assert(ctx != null, "Assigning values to attribues is only legal within a style block.");
-    ctx.addDarkStyle(this, value.dark);
-    ctx.addLightStyle(this, value.light);
-  }
-}
-
-trait StyleValue extends Renderable
-
-case class DualModeValue(dark: StyleValue, light: StyleValue)
-
-case class Style(selector: Selector, children: Seq[Style], styles: Map[StyleAttribute, StyleValue]) extends Renderable {
+case class Style(
+    selector: Selector,
+    children: Seq[Style],
+    styles: List[(StyleAttribute, StyleValue)])
+  extends Renderable {
   override def render: String = render(nestingDepth = 0);
 
   def render(nestingDepth: Int): String = {
@@ -112,47 +118,52 @@ case class Style(selector: Selector, children: Seq[Style], styles: Map[StyleAttr
   }
 }
 
-trait SheetStyleSheet extends Renderable with ImplicitSelectors {
-
-  implicit class StringValue(s: String) extends StyleValue {
-    override def render: String = s
-  }
-
-  implicit class RawStyleAttribute(s: String) extends StyleAttribute {
-    override def render: String = s
-  }
-  implicit class ScalatagsAttribute(s: scalatags.generic.Style) extends StyleAttribute {
-    override def render: String = s.cssName
-  }
+trait SheetStyleSheet
+  extends Renderable
+  with StyleAttributes
+  with StyleImplicits
+  with ImplicitSelectors {
 
   private var styles: List[Style] = Nil;
+  protected var embeddings: List[EmbeddedCss] = Nil;
   private var contextStack: List[StyleContext] = Nil;
   implicit protected def currentContext: StyleContext = {
-    assert(contextStack.nonEmpty, "Assigning values to attribues is only legal within a style block.");
+    assert(
+      contextStack.nonEmpty,
+      "Assigning values to attribues is only legal within a style block.");
     contextStack.head
   }
   implicit class StyleSelector(selector: Selector) {
     def apply(thunk: => Unit): Unit = {
-      contextStack ::= new StyleContext(selector);
+      contextStack ::= (if (contextStack.isEmpty) new RootStyleContext(selector)
+                        else new StyleContext(selector));
       thunk;
       contextStack match {
-        case Nil => throw new RuntimeException("Unreachable code reached.")
-        case ctx :: Nil => {
+        case Nil => throw new RuntimeException("Unreachable code.")
+        case rootCtx :: Nil => {
+          styles ++= rootCtx.result();
           contextStack = Nil;
-          styles ++= ctx.result(cascading = false);
         }
         case ctx :: parent :: rest => {
-          val result = ctx.result(cascading = true);
-          assert(result.nonEmpty, "Do not use empty style rules!");
-          assert(result.size < 2, "Do not use dark/light mode rules in cascading styles.");
+          val result = ctx.result();
+          assert(result.nonEmpty, "Do not write empty style rules");
+          assert(result.size < 2, s"Unsupported return of multiple rules: ${result}")
           parent.addChild(result.head);
           contextStack = parent :: rest;
         }
       }
+
     }
   }
 
-  def dualMode(dark: StyleValue, light: StyleValue): DualModeValue = DualModeValue(dark, light)
+  def dualMode(dark: String, light: String): DualModeValue = DualModeValue(dark, light)
+  def dualMode(dark: Int, light: Int): IntDualModeValue = IntDualModeValue(dark, light)
+  def dualMode(dark: Colour, light: Colour): ColourDualModeValue = ColourDualModeValue(dark, light)
+
+  def embed(cssText: String): Unit = {
+    require(contextStack.isEmpty, "Do not use embeddings in style rules");
+    embeddings ::= EmbeddedCss(cssText);
+  }
 
   override def render: String = styles.map(_.render).mkString("\n");
 }
@@ -161,21 +172,27 @@ trait SheetStyleSheet extends Renderable with ImplicitSelectors {
 object TestStyleSheet extends SheetStyleSheet {
   val custom = cls("custom");
   val anotherOne = cls("another-one");
-  val testy = custom containing div;
-  val testy2 = div containing custom;
+  val testy = custom / div;
+  val testy2 = div / custom;
   val testy3 = (div & custom ~ span) | (custom > div + span) | testy;
 
   testy3 {
     color :- dualMode(dark = "#AA0000", light = "#330000");
+    color :- dualMode(dark = 0xaa0000, light = 0x330000);
     border :- "1px solid";
+    border.left :- "1px solid";
+    border.left.color :- 0xff0000;
+
+    margin.left :- 2.px;
+    margin.right :- 2.px;
+    margin.top :- 2.px;
 
     custom {
       textTransform :- "uppercase";
+
+      anotherOne {
+        border :- "5px dashed red";
+      }
     }
   }
-
-  // TODO: Replace usage of scalatags.generic.Style with our own StyleValue system,
-  //        since that one has very rules.
-
-  val testy4 = div(custom, anotherOne, "test").toString;
 }

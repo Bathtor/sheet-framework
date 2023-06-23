@@ -40,36 +40,38 @@ trait APIOutputRollTemplate extends RollTemplate with APIOutputTemplate {
 
   override def ref: TemplateRef = this.name;
 
-  def apply(title: String,
-            content: String,
-            continuation: ContinuationType = ContinuationType.Full
-  ): TemplateApplication = {
-    var apps: List[(TemplateField[Nothing], Renderable)] = List(titleField <<= title, contentField <<= content);
+  def apply(
+      title: String,
+      content: String,
+      continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
+    var apps: List[(TemplateField[Nothing], Renderable)] =
+      List(titleField <<= title, contentField <<= content);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }
 
-  def warning(title: String,
-              content: String,
-              continuation: ContinuationType = ContinuationType.Full
-  ): TemplateApplication = {
+  def warning(
+      title: String,
+      content: String,
+      continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] =
       List(titleField <<= title, contentField <<= content, isWarning <<= true);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }
 
-  def error(title: String,
-            content: String,
-            continuation: ContinuationType = ContinuationType.Full
-  ): TemplateApplication = {
+  def error(
+      title: String,
+      content: String,
+      continuation: ContinuationType = ContinuationType.Full): TemplateApplication = {
     var apps: List[(TemplateField[Nothing], Renderable)] =
       List(titleField <<= title, contentField <<= content, isError <<= true);
     apps ++= continuationToApps(continuation);
     apply(apps: _*)
   }
 
-  private def continuationToApps(ct: ContinuationType): List[(TemplateField[Nothing], Renderable)] = {
+  private def continuationToApps(
+      ct: ContinuationType): List[(TemplateField[Nothing], Renderable)] = {
     import ContinuationType._;
     ct match {
       case Full   => List(showHeader <<= true, showFooter <<= true)

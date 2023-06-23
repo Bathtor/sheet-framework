@@ -59,7 +59,8 @@ case class DataAttributeValues(values: Map[String, Any]) extends AttributeValues
 
 }
 
-case class RowAttributeValues(rowId: String, original: DataAttributeValues) extends AttributeValues {
+case class RowAttributeValues(rowId: String, original: DataAttributeValues)
+  extends AttributeValues {
   override def apply(attr: String): Any = original(attr); // maybe implement this differently?
   override def apply[T](field: FieldLike[T]): Option[T] = {
     if (original.values.contains(field.accessor(rowId))) {
@@ -82,7 +83,7 @@ case class RowAttributeValues(rowId: String, original: DataAttributeValues) exte
 }
 
 case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], original: AttributeValues)
-    extends AttributeValues {
+  extends AttributeValues {
 
   override def apply(attr: String): Any = {
     val filtered = updates.filter(t => t._1.accessor == attr);
@@ -121,7 +122,8 @@ case class ReadThroughAttributeValues(updates: Map[FieldLike[Any], Any], origina
     s"ReadThroughAttributeValues(${data.mkString(",")})"
   }
 
-  private[sheet] def replaceValues(updates: Seq[(FieldLike[Any], Any)]): ReadThroughAttributeValues = {
+  private[sheet] def replaceValues(
+      updates: Seq[(FieldLike[Any], Any)]): ReadThroughAttributeValues = {
     ReadThroughAttributeValues(this.updates ++ updates.toMap, original)
   }
 }

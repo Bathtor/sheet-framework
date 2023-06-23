@@ -40,7 +40,10 @@ trait UpdateManager extends SheetWorker {
       Seq(newField <<= v, oldField <<= oldField.resetValue)
     }
   }
-  def nameChangeRepeating[T](section: RepeatingSection, oldField: Field[T], newField: Field[T]): SheetWorkerOp = {
+  def nameChangeRepeating[T](
+      section: RepeatingSection,
+      oldField: Field[T],
+      newField: Field[T]): SheetWorkerOp = {
     val secOp = op(oldField) update { case (v) =>
       Seq(newField <<= v, oldField <<= oldField.resetValue)
     };
@@ -68,17 +71,18 @@ case class SemanticVersion(major: Int, minor: Int, patch: Int, snapshot: Boolean
     * Snapshot status is maintained if either version is a snapshot.
     */
   def -(other: SemanticVersion): SemanticVersion = {
-    SemanticVersion(this.major - other.major,
-                    this.minor - other.minor,
-                    this.patch - other.patch,
-                    this.snapshot || other.snapshot
-    )
+    SemanticVersion(
+      this.major - other.major,
+      this.minor - other.minor,
+      this.patch - other.patch,
+      this.snapshot || other.snapshot)
   }
   def incMajor(): SemanticVersion = this.copy(major = this.major + 1, minor = 0, patch = 0);
   def incMinor(): SemanticVersion = this.copy(minor = this.minor + 1, patch = 0);
   def incPatch(): SemanticVersion = this.copy(patch = this.patch + 1);
 
-  override def toString(): String = if (snapshot) s"$major.$minor.$patch=SNAPSHOT" else s"$major.$minor.$patch";
+  override def toString(): String =
+    if (snapshot) s"$major.$minor.$patch=SNAPSHOT" else s"$major.$minor.$patch";
 }
 
 object SemanticVersion {
@@ -103,12 +107,13 @@ trait MinorVersionUpdateManager extends UpdateManager {
   private val updates = mutable.Map.empty[Int, List[SheetWorkerOp]];
 
   def model: SheetModel;
-  //def updateUnversioned(version: String): List[SheetWorkerOp];
+  // def updateUnversioned(version: String): List[SheetWorkerOp];
   /** Called on every version update operation with the new version.
     *
     * Return fields to be written.
     */
-  def onEveryVersionUpdate(newVersion: String): Seq[(FieldLike[Any], Any)] = Seq(model.versionField <<= newVersion);
+  def onEveryVersionUpdate(newVersion: String): Seq[(FieldLike[Any], Any)] = Seq(
+    model.versionField <<= newVersion);
 
   override def update(from: String, to: String): List[SheetWorkerOp] = {
     log(s"Preparing version updates from $from to $to");

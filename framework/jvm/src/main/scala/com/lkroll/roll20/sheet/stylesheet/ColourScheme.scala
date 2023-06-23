@@ -23,7 +23,7 @@
  *
  */
 
-package com.lkroll.roll20.sheet
+package com.lkroll.roll20.sheet.stylesheet
 
 import collection.mutable;
 import scala.util.matching.Regex;
@@ -47,7 +47,13 @@ sealed trait ColourLiteralMode {}
 case object RGB extends ColourLiteralMode
 case object HSL extends ColourLiteralMode
 
-case class ColourLiteral(mode: ColourLiteralMode, rh: Int, gs: Int, bl: Int, a: Option[Double] = None) extends Colour {
+case class ColourLiteral(
+    mode: ColourLiteralMode,
+    rh: Int,
+    gs: Int,
+    bl: Int,
+    a: Option[Double] = None)
+  extends Colour {
   override def css: String = (mode, a) match {
     case (RGB, Some(av)) => s"rgba($rh, $gs, $bl, $av)";
     case (RGB, None)     => s"rgb($rh, $gs, $bl)";
@@ -60,86 +66,20 @@ case object Transparent extends Colour {
   override def css: String = "transparent";
 }
 
-case class ColourField(key: String, colour: Colour) {
-  def css: String = colour.css;
-}
-
 trait ColourScheme {
 
-  private val colours = mutable.Map.empty[String, ColourField];
-  private val aliases = mutable.Map.empty[String, String];
+  def defaultColour = hex(0);
 
-  def apply(key: String): Colour = {
-    this.get(key) match {
-      case Some(c) => c
-      case None    => throw new NoSuchElementException(key);
-    }
-  }
-
-  def get(key: String): Option[Colour] = {
-    colours.get(key) match {
-      case Some(cf) => Some(cf.colour)
-      case None => {
-        aliases.get(key) match {
-          case Some(ckey) => colours.get(ckey).map(_.colour)
-          case None       => None
-        }
-      }
-    }
-  }
-
-  // Just in case I change my mind later on how the fields should look like
-  protected def colourToField(key: String, c: Colour): ColourField = {
-    val cf = ColourField(key, c);
-    colours += (key -> cf);
-    cf
-  }
-
-  def defaultColour = hex("default", 0);
-
-  def hex(key: String, num: Int) = colourToField(key, ColourNum(num));
-  def css(key: String, s: String) = colourToField(key, ColourString(s));
-  def rgb(key: String, r: Int, g: Int, b: Int) = colourToField(key, ColourLiteral(RGB, r, g, b));
-  def rgba(key: String, r: Int, g: Int, b: Int, a: Double) = colourToField(key, ColourLiteral(RGB, r, g, b, Some(a)));
-  def hsl(key: String, h: Int, s: Int, l: Int) = colourToField(key, ColourLiteral(HSL, h, s, l));
-  def hsla(key: String, h: Int, s: Int, l: Int, a: Double) = colourToField(key, ColourLiteral(HSL, h, s, l, Some(a)));
-  def transparent(key: String) = colourToField(key, Transparent);
-
-  def alias(aliasKey: String, colourKey: String): ColourField = {
-    val cf = colours(colourKey);
-    assert(cf != null);
-    aliases += (aliasKey -> colourKey);
-    cf // change if colourToField changes!
-  }
-
-  def alias(aliasKey: String, cf: ColourField): ColourField =
-    alias(aliasKey, cf.key); // this will make sure you don't a field from another palette
-
-  def replaceColoursInText(input: String): String =
-    ColourScheme.replacePattern.replaceAllIn(
-      input,
-      _ match {
-        case m if m.subgroups.size > 0 =>
-          this.get(m.subgroups(0)) match {
-            case Some(c) => c.css
-            case None => {
-              println(s"Found no match for placeholder ($m). Using the defaultColour.");
-              defaultColour.css
-            }
-          }
-        case m => {
-          println(s"Invalid match ($m). Using the defaultColour.");
-          defaultColour.css
-        }
-      }
-    );
+  def hex(num: Int) = ColourNum(num);
+  def css(s: String) = ColourString(s);
+  def rgb(r: Int, g: Int, b: Int) = ColourLiteral(RGB, r, g, b);
+  def rgba(r: Int, g: Int, b: Int, a: Double) = ColourLiteral(RGB, r, g, b, Some(a));
+  def hsl(h: Int, s: Int, l: Int) = ColourLiteral(HSL, h, s, l);
+  def hsla(h: Int, s: Int, l: Int, a: Double) = ColourLiteral(HSL, h, s, l, Some(a));
+  val transparent = Transparent;
 }
 
-object ColourScheme {
-  val replacePattern = """\$\{((\w|\-)+)\}""".r;
-}
-
-case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
+class XMLColorPalette(val data: scala.xml.Node) extends ColourScheme {
 
   assert(data.label == "palette");
 
@@ -155,7 +95,7 @@ case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
     case x                              => None
   };
 
-  def getColourModulo(setId: Int, colourId: Int): ColourField = {
+  def getColourModulo(setId: Int, colourId: Int): Colour = {
 
     val colourSet = if (colourSets.size > setId) {
       colourSets(setId)
@@ -173,11 +113,10 @@ case class XMLColorPalette(data: scala.xml.Node) extends ColourScheme {
       println(s"Provided palette does not have a colour $colourId. Wrapping around.");
       colourSetCleaned(colourId % colourSetCleaned.size)
     }
-    rgb((colourNode \ "@id").text,
-        (colourNode \ "@r").text.toInt,
-        (colourNode \ "@g").text.toInt,
-        (colourNode \ "@b").text.toInt
-    )
+    rgb(
+      (colourNode \ "@r").text.toInt,
+      (colourNode \ "@g").text.toInt,
+      (colourNode \ "@b").text.toInt)
   }
 
   // *** Primary color:

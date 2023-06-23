@@ -46,8 +46,10 @@ trait SheetWorkerRoot extends SheetWorker {
 
   @JSExport
   def load(): Unit = {
-    val aggFieldS = children.foldLeft(this.fieldSerialisers)((acc, child) => acc ++ child.fieldSerialisers);
-    val aggTypeS = children.foldLeft(this.typeSerialisers)((acc, child) => acc ++ child.typeSerialisers);
+    val aggFieldS =
+      children.foldLeft(this.fieldSerialisers)((acc, child) => acc ++ child.fieldSerialisers);
+    val aggTypeS =
+      children.foldLeft(this.typeSerialisers)((acc, child) => acc ++ child.typeSerialisers);
     this.fieldSerialisers = aggFieldS;
     this.typeSerialisers = aggTypeS;
     children.foreach { child =>
@@ -120,7 +122,8 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   override def sheet: SheetWorker = this;
 
   def register[T](f: FieldLike[T], s: JSSerialiser[T]): Unit = {
-    fieldSerialisers += (f.accessor -> s.asInstanceOf[JSSerialiser[Any]]); // just throw away the type info
+    fieldSerialisers += (f.accessor -> s
+      .asInstanceOf[JSSerialiser[Any]]); // just throw away the type info
   }
 
   def register[T: reflect.ClassTag](s: JSSerialiser[T]): Unit = {
@@ -149,7 +152,9 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
 
   def extractSimpleRowId(id: String): String = id.split('_').last;
 
-  def getRowAttrs(section: RepeatingSection, fields: Seq[FieldLike[_]]): Future[Map[String, RowAttributeValues]] = {
+  def getRowAttrs(
+      section: RepeatingSection,
+      fields: Seq[FieldLike[_]]): Future[Map[String, RowAttributeValues]] = {
     val p = Promise[Map[String, RowAttributeValues]]();
     Roll20.getSectionIDs(
       section.cls,
@@ -168,12 +173,12 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
     p.future
   }
 
-  def foldRows[Acc, T](section: RepeatingSection,
-                       fields: FieldOpsWithFields[T],
-                       initialValue: Acc,
-                       f: (Acc, (String, T)) => Acc,
-                       r: Acc => Updates
-  ): Future[ChainingDecision] = {
+  def foldRows[Acc, T](
+      section: RepeatingSection,
+      fields: FieldOpsWithFields[T],
+      initialValue: Acc,
+      f: (Acc, (String, T)) => Acc,
+      r: Acc => Updates): Future[ChainingDecision] = {
     val resF = for {
       rows <- getRowAttrs(section, fields.getFields)
     } yield {
@@ -204,7 +209,8 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
         op match {
           case _: SideEffectingSheetWorkerOp[_] | _: WritingSheetWorkerOp[_] | _: MergedOpChain |
               _: WritingNoMergeSheetWorkerOp[_] => {
-            val attrNames = ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
+            val attrNames =
+              ids.map(id => op.inputFields.map(f => f.accessor(id))).flatten.toJSArray;
             Roll20.getAttrs(
               attrNames,
               (values: js.Dictionary[Any]) => {
@@ -218,21 +224,22 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
                 //
                 };
                 val outputDataF = Future.sequence(outputDataFs).map { outputData =>
-                  val emptyAcc: (Map[String, js.Any], ChainingDecision) = (Map.empty[String, js.Any], SkipChain);
+                  val emptyAcc: (Map[String, js.Any], ChainingDecision) =
+                    (Map.empty[String, js.Any], SkipChain);
                   outputData.foldLeft(emptyAcc) { (acc, dataCD) =>
                     val (mapAcc, cdAcc) = acc;
                     val (data, cd) = dataCD;
                     (mapAcc ++ data, cdAcc | cd)
                   }
                 }
-                //.flatten.toMap.toJSDictionary;
+                // .flatten.toMap.toJSDictionary;
                 outputDataF map { case (outputData, cd) =>
-                  Roll20.setAttrs(outputData.toJSDictionary,
-                                  SetterOptions.silent(true),
-                                  () => {
-                                    p.success(cd); ()
-                                  }
-                  )
+                  Roll20.setAttrs(
+                    outputData.toJSDictionary,
+                    SetterOptions.silent(true),
+                    () => {
+                      p.success(cd); ()
+                    })
                 };
                 ()
               }
@@ -258,11 +265,11 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   def getAttrs(fields: Set[FieldLike[_]]): Future[AttributeValues] = {
     val attrNames: js.Array[String] = fields.map(_.accessor).toJSArray;
     val p = Promise[AttributeValues]();
-    Roll20.getAttrs(attrNames,
-                    (values: js.Dictionary[Any]) => {
-                      p.success(DataAttributeValues(values.toMap)); ()
-                    }
-    );
+    Roll20.getAttrs(
+      attrNames,
+      (values: js.Dictionary[Any]) => {
+        p.success(DataAttributeValues(values.toMap)); ()
+      });
     p.future
   }
 
@@ -282,13 +289,13 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
       .toJSDictionary;
     val p = Promise[Unit]();
     log(s"Setting attrs: ${valuesWithNames.mkString}");
-    Roll20.setAttrs(valuesWithNames,
-                    SetterOptions.silent(silent),
-                    () => {
-                      p.success(()); ()
-                    }
-    );
-    //Roll20.setAttrs(valuesWithNames);
+    Roll20.setAttrs(
+      valuesWithNames,
+      SetterOptions.silent(silent),
+      () => {
+        p.success(()); ()
+      });
+    // Roll20.setAttrs(valuesWithNames);
     p.future
   }
 
@@ -335,7 +342,7 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
   def bind[T](partialOp: FieldOps[T]): FieldOpsWithCompleter[T] with FieldOpsWithChain[T] = {
     partialOp match {
       case partial: SheetWorkerOpPartial[T] => new SheetWorkerBinding(partial)
-      case x                                => throw new java.lang.IllegalArgumentException(x.toString());
+      case x => throw new java.lang.IllegalArgumentException(x.toString());
     }
   }
 
@@ -345,21 +352,27 @@ trait SheetWorker extends SheetWorkerLogging with OpPartials {
     throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   }
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def addEventListener = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def addEventListener =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def removeEventListener = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def removeEventListener =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def importScripts = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def importScripts =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
   class XMLHttpRequest {
     throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   }
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def postMessage = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def postMessage =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def attachEvent = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def attachEvent =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
-  def detachEvent = throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
+  def detachEvent =
+    throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");
   @deprecated("Roll20 does not allow this in sheet workers!", "0.1")
   class ActiveXObject {
     throw new java.lang.SecurityException("Roll20 does not allow this in sheet workers!");

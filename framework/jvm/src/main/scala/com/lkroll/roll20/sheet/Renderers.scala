@@ -28,7 +28,7 @@ package com.lkroll.roll20.sheet
 import scalatags.Text.all._
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
-import com.lkroll.roll20.sheet.tabbed.TabbedStyle
+import com.lkroll.roll20.sheet.tabbed.TabbedStyleClasses
 
 object GroupRenderer {
   type FieldRenderer = PartialFunction[(FieldLike[_], RenderMode), Tag];
@@ -75,11 +75,11 @@ trait GroupRenderer {
   def renderUnlabelled(e: Tag): Tag = e;
 
   def renderEditWrapper(e: Seq[Tag]): Tag = {
-    span(TabbedStyle.edit, e)
+    span(TabbedStyleClasses.edit, e)
   }
 
   def renderPresentationWrapper(e: Seq[Tag]): Tag = {
-    span(TabbedStyle.presentation, e)
+    span(TabbedStyleClasses.presentation, e)
   }
 
   def renderDualModeWrapper(edit: Tag, pres: Tag): Tag = {
@@ -95,26 +95,31 @@ trait GroupRenderer {
     fieldCombiner(tags)
   }
 
-  protected def renderElement(e: SheetElement, mode: RenderMode, labelled: Boolean = false): Tag = e match {
-    case TagElement(t) if labelled               => t
-    case TagElement(t)                           => renderUnlabelled(t)
-    case MarkupElement(e)                        => renderElement(e, mode, true)
-    case FieldElement(f) if labelled             => renderField(f, mode)
-    case FieldElement(f)                         => renderUnlabelled(renderField(f, mode))
-    case GroupElement(fg)                        => renderChild(fg, mode)
-    case FieldWithRenderer(f, r) if labelled     => r(f)
-    case FieldWithRenderer(f, r)                 => renderUnlabelled(r(f))
-    case FieldWithDualRenderer(f, r) if labelled => r(f, mode)
-    case FieldWithDualRenderer(f, r)             => renderUnlabelled(r(f, mode))
-    case LabelledElement(l, e) if labelled       => throw new RuntimeException("Do not put labels within labels!")
-    case LabelledElement(l, e)                   => renderLabelled(l, renderElement(e, mode, true))
-    case EditOnlyElement(es)                     => renderEditWrapper(es.map(renderElement(_, RenderMode.Edit)))
-    case PresentationOnlyElement(es)             => renderPresentationWrapper(es.map(renderElement(_, RenderMode.Presentation)))
-    case DualModeElement(edit, presentation) =>
-      renderDualModeWrapper(renderElement(edit, RenderMode.Edit), renderElement(presentation, RenderMode.Presentation))
-    case RollElement(roll, e) if labelled => throw new RuntimeException("Do not label rolls!")
-    case RollElement(roll, e)             => renderRoll(roll, renderElement(e, mode))
-  }
+  protected def renderElement(e: SheetElement, mode: RenderMode, labelled: Boolean = false): Tag =
+    e match {
+      case TagElement(t) if labelled               => t
+      case TagElement(t)                           => renderUnlabelled(t)
+      case MarkupElement(e)                        => renderElement(e, mode, true)
+      case FieldElement(f) if labelled             => renderField(f, mode)
+      case FieldElement(f)                         => renderUnlabelled(renderField(f, mode))
+      case GroupElement(fg)                        => renderChild(fg, mode)
+      case FieldWithRenderer(f, r) if labelled     => r(f)
+      case FieldWithRenderer(f, r)                 => renderUnlabelled(r(f))
+      case FieldWithDualRenderer(f, r) if labelled => r(f, mode)
+      case FieldWithDualRenderer(f, r)             => renderUnlabelled(r(f, mode))
+      case LabelledElement(l, e) if labelled =>
+        throw new RuntimeException("Do not put labels within labels!")
+      case LabelledElement(l, e) => renderLabelled(l, renderElement(e, mode, true))
+      case EditOnlyElement(es)   => renderEditWrapper(es.map(renderElement(_, RenderMode.Edit)))
+      case PresentationOnlyElement(es) =>
+        renderPresentationWrapper(es.map(renderElement(_, RenderMode.Presentation)))
+      case DualModeElement(edit, presentation) =>
+        renderDualModeWrapper(
+          renderElement(edit, RenderMode.Edit),
+          renderElement(presentation, RenderMode.Presentation))
+      case RollElement(roll, e) if labelled => throw new RuntimeException("Do not label rolls!")
+      case RollElement(roll, e)             => renderRoll(roll, renderElement(e, mode))
+    }
 
   val fieldset = tag("fieldset");
 }
@@ -127,7 +132,8 @@ object DefaultRenderer extends GroupRenderer {
     case (b: Button, _) => p(button(`type` := "roll", name := b.name, value := b.roll.render))
     case (f: AutocalcField[_], _) =>
       p(input(`type` := "text", name := f.name, value := f.initialValue, disabled := true))
-    case (f: Field[_], _) if f.editable()    => p(input(`type` := "text", name := f.name, value := f.initialValue))
+    case (f: Field[_], _) if f.editable() =>
+      p(input(`type` := "text", name := f.name, value := f.initialValue))
     case (f: Field[_], _) if !(f.editable()) => p(span(name := f.name, f.initialValue))
   };
 }

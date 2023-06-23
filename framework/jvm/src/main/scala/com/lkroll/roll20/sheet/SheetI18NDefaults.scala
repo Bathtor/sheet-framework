@@ -51,7 +51,9 @@ trait SheetI18NDefaults extends Renderable {
     Abbreviation(abbrL, fullL.title)
   }
 
-  def enumeration[T <: Enumeration](keys: OptionKey[T], defaults: T#Value => String): OptionLabel = {
+  def enumeration[T <: Enumeration](
+      keys: OptionKey[T],
+      defaults: T#Value => String): OptionLabel = {
     val opts = keys.options.map { case (enumval, key) =>
       enumval.toString -> text(DataKey(key), defaults(enumval))
     };
@@ -63,7 +65,8 @@ trait SheetI18NDefaults extends Renderable {
   }
 
   implicit class AugmentedAbbreviationKey(a: AbbreviationKey) {
-    def <~(abbrDefault: String, fullDefault: String): Abbreviation = abbr(a, abbrDefault, fullDefault);
+    def <~(abbrDefault: String, fullDefault: String): Abbreviation =
+      abbr(a, abbrDefault, fullDefault);
   }
 
   implicit class AugmentedOptionKey[T <: Enumeration](o: OptionKey[T]) {
@@ -106,10 +109,11 @@ case class SheetI18NDefaultsList(translations: List[SheetI18NDefaults]) extends 
     translations.foreach { t =>
       t.verify();
     }
-    val sortedEntries = translations.foldLeft(scala.collection.immutable.TreeMap.empty[String, String]) {
-      case (acc, t) => acc ++ t.entries
-    };
-    //= scala.collection.immutable.TreeMap(entries.toArray: _*)
+    val sortedEntries =
+      translations.foldLeft(scala.collection.immutable.TreeMap.empty[String, String]) {
+        case (acc, t) => acc ++ t.entries
+      };
+    // = scala.collection.immutable.TreeMap(entries.toArray: _*)
     sortedEntries
       .map { case (k, v) =>
         s"""\"$k\":${JSONObject.quote(v)}"""

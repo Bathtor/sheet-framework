@@ -33,7 +33,7 @@ import util.{Failure, Success, Try}
 
 case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends SheetWorker {
 
-  //register(model.showOverlay, ToggleSer);
+  // register(model.showOverlay, ToggleSer);
 
   val activateOverlay = nop { _: Option[Unit] =>
     setAttrs(Map(model.showOverlay <<= true))
@@ -79,7 +79,7 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
       case Some(v) if !v.isEmpty() => {
         if (v == model.version) {
           log(s"Loaded sheet with version $v");
-          //Promise[Unit]().success(()).future
+          // Promise[Unit]().success(()).future
           Future.successful(())
         } else {
           log(s"Loaded sheet with version $v < ${model.version}");
@@ -89,7 +89,8 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
               val updates = manager.update(v, model.version);
               val count = updates.size;
               debug(s"Got $count updates to process.");
-              val updatesProcessing = setProcessing(count) :: updates.flatMap(op => List(op, decrementProcessing));
+              val updatesProcessing =
+                setProcessing(count) :: updates.flatMap(op => List(op, decrementProcessing));
               debug(s"Got update processing: ${updatesProcessing}");
               val op = SheetWorkerOpChain(updatesProcessing);
               debug(s"Got update ops: ${op}");
@@ -114,7 +115,7 @@ case class TabbedWorker(model: SheetModel, manager: UpdateManager) extends Sheet
           _ <- SheetWorkerOpChain(manager.updateUnversioned(model.version))();
           _ <- deactivateOverlay()
         } yield ()
-        //setAttrs(Map(versionField <<= version, characterSheet <<= s"$sheetName v$version"))
+        // setAttrs(Map(versionField <<= version, characterSheet <<= s"$sheetName v$version"))
       }
     }
   };

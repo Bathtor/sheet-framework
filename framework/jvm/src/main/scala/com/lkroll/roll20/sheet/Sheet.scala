@@ -59,8 +59,10 @@ case class TagElement(tag: Tag) extends SheetElement
 case class MarkupElement(elem: SheetElement) extends SheetElement
 case class FieldElement(field: FieldLike[_]) extends SheetElement
 case class GroupElement(group: FieldGroup) extends SheetElement
-case class FieldWithRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldSingleRenderer) extends SheetElement
-case class FieldWithDualRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldDualRenderer) extends SheetElement
+case class FieldWithRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldSingleRenderer)
+  extends SheetElement
+case class FieldWithDualRenderer(field: FieldLike[_], renderer: GroupRenderer.FieldDualRenderer)
+  extends SheetElement
 case class LabelledElement(l: LabelsI18N, elem: SheetElement) extends SheetElement
 case class EditOnlyElement(elem: Seq[SheetElement]) extends SheetElement
 case class PresentationOnlyElement(elem: Seq[SheetElement]) extends SheetElement
@@ -80,7 +82,11 @@ object FieldGroup {
   def apply(renderer: GroupRenderer, elems: SheetElement*) = GroupWithRenderer(renderer, elems);
 }
 
-case class GroupWithRenderer(renderer: GroupRenderer, members: Seq[SheetElement]) extends FieldGroup {}
+case class GroupWithRenderer(renderer: GroupRenderer, members: Seq[SheetElement])
+  extends FieldGroup {}
 
-case class FieldSet(renderer: GroupRenderer, repeating: RepeatingSection, members: Seq[SheetElement])
-    extends FieldGroup {}
+case class FieldSet(
+    renderer: GroupRenderer,
+    repeating: RepeatingSection,
+    members: Seq[SheetElement])
+  extends FieldGroup {}

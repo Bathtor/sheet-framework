@@ -49,12 +49,13 @@ sealed trait FieldOps[T] {
     f(ot).map(_ => ExecuteChain)
   }
 
-  protected def defaultUpdateChainingDecision(f: T => Updates)(implicit ec: ExecutionContext): T => UpdateDecision = {
-    (t: T) =>
-      (f(t), ExecuteChain)
+  protected def defaultUpdateChainingDecision(f: T => Updates)(implicit
+      ec: ExecutionContext): T => UpdateDecision = { (t: T) =>
+    (f(t), ExecuteChain)
   }
 
-  def apply(f: Option[T] => Unit)(implicit ec: ExecutionContext, dummy: DummyImplicit): SheetWorkerOp = {
+  def apply(
+      f: Option[T] => Unit)(implicit ec: ExecutionContext, dummy: DummyImplicit): SheetWorkerOp = {
     val f2 = (ot: Option[T]) => {
       val p = Promise[Unit]();
       p.success(f(ot));
@@ -81,16 +82,22 @@ sealed trait FieldOpsWithCompleter[T] extends FieldOps[T] {
     };
     apply(f2, onComplete)
   };
-  def apply(f: Option[T] => Future[Unit], onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def apply(f: Option[T] => Future[Unit], onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext): SheetWorkerOp;
 
-  def update(f: T => Updates, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def update(f: T => Updates, onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext): SheetWorkerOp;
 }
 
 sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
   def apply(
       f: Option[T] => ChainingDecision,
       op: SheetWorkerOp
-  )(implicit ec: ExecutionContext, d1: DummyImplicit, d2: DummyImplicit, d3: DummyImplicit): SheetWorkerOp = {
+  )(implicit
+      ec: ExecutionContext,
+      d1: DummyImplicit,
+      d2: DummyImplicit,
+      d3: DummyImplicit): SheetWorkerOp = {
     val f2 = (ot: Option[T]) => {
       val p = Promise[ChainingDecision]();
       p.success(f(ot));
@@ -99,9 +106,10 @@ sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
     apply(f2, op)
   };
 
-  def apply(f: Option[T] => Unit,
-            op: SheetWorkerOp
-  )(implicit ec: ExecutionContext, d1: DummyImplicit, d2: DummyImplicit): SheetWorkerOp = {
+  def apply(f: Option[T] => Unit, op: SheetWorkerOp)(implicit
+      ec: ExecutionContext,
+      d1: DummyImplicit,
+      d2: DummyImplicit): SheetWorkerOp = {
     val f2 = (ot: Option[T]) => {
       val p = Promise[ChainingDecision]();
       f(ot);
@@ -118,7 +126,8 @@ sealed trait FieldOpsWithChain[T] extends FieldOps[T] {
     apply(defaultChainingDecision(f), op)
   }
 
-  def apply(f: Option[T] => Future[ChainingDecision], op: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
+  def apply(f: Option[T] => Future[ChainingDecision], op: SheetWorkerOp)(implicit
+      ec: ExecutionContext): SheetWorkerOp;
 
   def update(f: T => Updates, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp;
 
@@ -158,7 +167,8 @@ sealed trait FieldOpsWithFields[T] extends FieldOps[T] {
         v match {
           case (_, t) => nev.plus(acc, toNum(t))
         };
-      val r: N => Updates = (acc: N) => Seq((outputField -> acc).asInstanceOf[(FieldLike[Any], Any)]);
+      val r: N => Updates =
+        (acc: N) => Seq((outputField -> acc).asInstanceOf[(FieldLike[Any], Any)]);
       sheet.foldRows(section, this, nev.zero, f, r).map(_ => ())
     }
   }
@@ -169,7 +179,8 @@ case class NoOp(sheet: SheetWorker) extends FieldOpsWithFields[Unit] {
   def getFields: Seq[FieldLike[Any]] = Seq.empty;
   def mapper: AttributeValues => Option[Unit] = (_: AttributeValues) => Some(());
 
-  override def apply(f: Option[Unit] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def apply(f: Option[Unit] => Future[Unit])(implicit
+      ec: ExecutionContext): SheetWorkerOp = {
     new SideEffectingSheetWorkerOp(this, defaultChainingDecision(f));
   }
 
@@ -178,12 +189,15 @@ case class NoOp(sheet: SheetWorker) extends FieldOpsWithFields[Unit] {
   }
 }
 
-class SheetWorkerOpPartial[T](private val t: Product, val mapper: AttributeValues => Option[T], val sheet: SheetWorker)
-    extends FieldOpsWithFields[T] {
+class SheetWorkerOpPartial[T](
+    private val t: Product,
+    val mapper: AttributeValues => Option[T],
+    val sheet: SheetWorker)
+  extends FieldOpsWithFields[T] {
 
   val getFields = t.productIterator.map {
     case f: FieldLike[Any] @unchecked => f
-    case x                            => throw new IllegalArgumentException(s"Expected FieldLike, got $x");
+    case x => throw new IllegalArgumentException(s"Expected FieldLike, got $x");
   }.toSeq;
 
   override def apply(f: Option[T] => Future[Unit])(implicit ec: ExecutionContext): SheetWorkerOp = {
@@ -196,8 +210,8 @@ class SheetWorkerOpPartial[T](private val t: Product, val mapper: AttributeValue
 }
 
 class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
-    extends FieldOpsWithCompleter[T]
-    with FieldOpsWithChain[T] {
+  extends FieldOpsWithCompleter[T]
+  with FieldOpsWithChain[T] {
   import partial.getFields
 
   def sheet = partial.sheet;
@@ -227,24 +241,25 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
   }
 
   private def bind(op: SheetWorkerOp)(implicit ec: ExecutionContext): Unit = {
-    sheet.on(trigger,
-             (e) => {
-               sheet.log(s"Op triggered for: ${trigger}");
-               op().onComplete {
-                 case Success(_) => () // ignore
-                 case Failure(e) => sheet.error(e)
-               };
-             }
-    );
+    sheet.on(
+      trigger,
+      (e) => {
+        sheet.log(s"Op triggered for: ${trigger}");
+        op().onComplete {
+          case Success(_) => () // ignore
+          case Failure(e) => sheet.error(e)
+        };
+      });
   }
 
-  private def bind(op: SheetWorkerOp, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): Unit = {
-    sheet.on(trigger,
-             (e) => {
-               sheet.log(s"Op triggered for: ${trigger}");
-               op().onComplete(x => onComplete(x.map(_ => ())));
-             }
-    );
+  private def bind(op: SheetWorkerOp, onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext): Unit = {
+    sheet.on(
+      trigger,
+      (e) => {
+        sheet.log(s"Op triggered for: ${trigger}");
+        op().onComplete(x => onComplete(x.map(_ => ())));
+      });
   }
 
   override def update(f: T => Updates)(implicit ec: ExecutionContext): SheetWorkerOp = {
@@ -253,13 +268,15 @@ class SheetWorkerBinding[T](partial: SheetWorkerOpPartial[T])
     op
   }
 
-  override def update(f: T => Updates, onComplete: Try[Unit] => Unit)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def update(f: T => Updates, onComplete: Try[Unit] => Unit)(implicit
+      ec: ExecutionContext): SheetWorkerOp = {
     val op = new WritingSheetWorkerOp(partial, f);
     bind(op, onComplete);
     op
   }
 
-  override def update(f: T => Updates, nextOp: SheetWorkerOp)(implicit ec: ExecutionContext): SheetWorkerOp = {
+  override def update(f: T => Updates, nextOp: SheetWorkerOp)(implicit
+      ec: ExecutionContext): SheetWorkerOp = {
     val op = new WritingSheetWorkerOp(partial, f) andThen nextOp;
     bind(op);
     op
@@ -316,27 +333,32 @@ sealed trait SheetWorkerOp {
       sheet.log("Not setting any values as none were returned.");
       Future.successful(())
     } else {
-      sheet.log(s"Setting values:\n${output.map(t => t._1.accessor + " -> " + t._2).mkString(",")}");
+      sheet.log(
+        s"Setting values:\n${output.map(t => t._1.accessor + " -> " + t._2).mkString(",")}");
       sheet.setAttrs(output.toMap)
     }
   }
 }
 
-case class SideEffectingSheetWorkerOp[T](partial: FieldOpsWithFields[T],
-                                         application: Option[T] => Future[ChainingDecision]
-) extends SheetWorkerOp {
+case class SideEffectingSheetWorkerOp[T](
+    partial: FieldOpsWithFields[T],
+    application: Option[T] => Future[ChainingDecision])
+  extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
-  override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = {
+  override def computeOutput(attrs: AttributeValues)(implicit
+      ec: ExecutionContext): Future[UpdateDecision] = {
     val f = (partial.mapper andThen application)(attrs);
     f.map(d => (emptyUpdates, d))
   }
 }
 
-case class WritingSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: T => Updates) extends SheetWorkerOp {
+case class WritingSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: T => Updates)
+  extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
-  override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = {
+  override def computeOutput(attrs: AttributeValues)(implicit
+      ec: ExecutionContext): Future[UpdateDecision] = {
     partial.mapper(attrs) match {
       case Some(t) => Future.successful((application(t), ExecuteChain))
       case None => {
@@ -348,11 +370,14 @@ case class WritingSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: 
   }
 }
 
-case class WritingNoMergeSheetWorkerOp[T](partial: FieldOpsWithFields[T], application: T => UpdateDecision)
-    extends SheetWorkerOp {
+case class WritingNoMergeSheetWorkerOp[T](
+    partial: FieldOpsWithFields[T],
+    application: T => UpdateDecision)
+  extends SheetWorkerOp {
   override def sheet: SheetWorker = partial.sheet;
   override def inputFields: Set[FieldLike[_]] = partial.getFields.toSet;
-  override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = {
+  override def computeOutput(attrs: AttributeValues)(implicit
+      ec: ExecutionContext): Future[UpdateDecision] = {
     partial.mapper(attrs) match {
       case Some(t) => Future.successful(application(t))
       case None => {
@@ -411,12 +436,12 @@ object SheetWorkerOpChain {
     assert(!operations.isEmpty);
     val head = operations.head;
     val sheet = head.sheet;
-    //sheet.log(s"Creating chain from ops:\n${operations.mkString(",")}");
+    // sheet.log(s"Creating chain from ops:\n${operations.mkString(",")}");
     if (operations.length == 1) {
       return head;
     }
     val ops = leftDescend(sheet, List(), operations);
-    //sheet.log(s"Chain of ops:\n${ops.mkString(",")}");
+    // sheet.log(s"Chain of ops:\n${ops.mkString(",")}");
     assert(!ops.isEmpty);
     if (ops.length == 1) {
       ops.head match {
@@ -430,38 +455,46 @@ object SheetWorkerOpChain {
     }
   }
 
-  @tailrec private def leftDescend(sheet: SheetWorker,
-                                   acc: List[ChainOperation],
-                                   rest: List[SheetWorkerOp]
-  ): List[ChainOperation] = {
+  @tailrec private def leftDescend(
+      sheet: SheetWorker,
+      acc: List[ChainOperation],
+      rest: List[SheetWorkerOp]): List[ChainOperation] = {
     rest match {
       case h :: r =>
         h match {
-          case se: SideEffectingSheetWorkerOp[_]    => leftDescend(sheet, SideEffecting(se) :: acc, r)
-          case we: WritingSheetWorkerOp[_]          => rightDescend(sheet, List(we), acc, r)
+          case se: SideEffectingSheetWorkerOp[_] => leftDescend(sheet, SideEffecting(se) :: acc, r)
+          case we: WritingSheetWorkerOp[_]       => rightDescend(sheet, List(we), acc, r)
           case wenm: WritingNoMergeSheetWorkerOp[_] => leftDescend(sheet, Unmerged(wenm) :: acc, r)
           case MergedOpChain(_, otherOps)           => rightDescend(sheet, otherOps.reverse, acc, r)
-          case ChainedOpChain(_, otherOps)          => leftDescend(sheet, acc, otherOps.map(e => e.lift()) ++ r)
+          case ChainedOpChain(_, otherOps) =>
+            leftDescend(sheet, acc, otherOps.map(e => e.lift()) ++ r)
         }
       case Nil => acc.reverse
     }
   }
 
-  @tailrec private def rightDescend(sheet: SheetWorker,
-                                    wacc: List[WritingSheetWorkerOp[_]],
-                                    acc: List[ChainOperation],
-                                    rest: List[SheetWorkerOp]
-  ): List[ChainOperation] = {
+  @tailrec private def rightDescend(
+      sheet: SheetWorker,
+      wacc: List[WritingSheetWorkerOp[_]],
+      acc: List[ChainOperation],
+      rest: List[SheetWorkerOp]): List[ChainOperation] = {
     rest match {
       case h :: r =>
         h match {
           case se: SideEffectingSheetWorkerOp[_] =>
-            leftDescend(sheet, SideEffecting(se) :: Merged(MergedOpChain(sheet, wacc.reverse)) :: acc, r)
+            leftDescend(
+              sheet,
+              SideEffecting(se) :: Merged(MergedOpChain(sheet, wacc.reverse)) :: acc,
+              r)
           case we: WritingSheetWorkerOp[_] => rightDescend(sheet, we :: wacc, acc, r)
           case wenm: WritingNoMergeSheetWorkerOp[_] =>
-            leftDescend(sheet, Unmerged(wenm) :: Merged(MergedOpChain(sheet, wacc.reverse)) :: acc, r)
-          case MergedOpChain(_, otherOps)  => rightDescend(sheet, otherOps.reverse ++ wacc, acc, r)
-          case ChainedOpChain(_, otherOps) => rightDescend(sheet, wacc, acc, otherOps.map(e => e.lift()) ++ r)
+            leftDescend(
+              sheet,
+              Unmerged(wenm) :: Merged(MergedOpChain(sheet, wacc.reverse)) :: acc,
+              r)
+          case MergedOpChain(_, otherOps) => rightDescend(sheet, otherOps.reverse ++ wacc, acc, r)
+          case ChainedOpChain(_, otherOps) =>
+            rightDescend(sheet, wacc, acc, otherOps.map(e => e.lift()) ++ r)
         }
       case Nil => (Merged(MergedOpChain(sheet, wacc.reverse)) :: acc).reverse
     }
@@ -469,7 +502,8 @@ object SheetWorkerOpChain {
 
 }
 
-case class MergedOpChain(sheet: SheetWorker, operations: List[WritingSheetWorkerOp[_]]) extends SheetWorkerOp {
+case class MergedOpChain(sheet: SheetWorker, operations: List[WritingSheetWorkerOp[_]])
+  extends SheetWorkerOp {
 
   private lazy val _inputFields: Set[FieldLike[_]] = {
     operations.map(_.inputFields).fold(Set.empty)((s1, s2) => s1 | s2)
@@ -477,9 +511,11 @@ case class MergedOpChain(sheet: SheetWorker, operations: List[WritingSheetWorker
 
   override def inputFields: Set[FieldLike[_]] = _inputFields;
 
-  override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = {
+  override def computeOutput(attrs: AttributeValues)(implicit
+      ec: ExecutionContext): Future[UpdateDecision] = {
     val emptyRTAV = ReadThroughAttributeValues(Map.empty[FieldLike[Any], Any], attrs);
-    val emptyAcc: Future[(ReadThroughAttributeValues, ChainingDecision)] = Future.successful((emptyRTAV, SkipChain));
+    val emptyAcc: Future[(ReadThroughAttributeValues, ChainingDecision)] =
+      Future.successful((emptyRTAV, SkipChain));
     val finalF = operations.foldLeft(emptyAcc)((accF, op) => {
       for {
         (updatesAcc, chainDAcc) <- accF;
@@ -501,10 +537,12 @@ case class MergedOpChain(sheet: SheetWorker, operations: List[WritingSheetWorker
 
   override def ++(ops: List[SheetWorkerOp]): SheetWorkerOp = this andThen SheetWorkerOpChain(ops);
   override def andThen(op: SheetWorkerOp): SheetWorkerOp = op match {
-    case se: SideEffectingSheetWorkerOp[_]    => ChainedOpChain(sheet, List(Merged(this), SideEffecting(se)))
-    case we: WritingSheetWorkerOp[_]          => MergedOpChain(sheet, operations :+ we);
-    case wenm: WritingNoMergeSheetWorkerOp[_] => ChainedOpChain(sheet, List(Merged(this), Unmerged(wenm)))
-    case MergedOpChain(_, otherOps)           => MergedOpChain(sheet, operations ++ otherOps);
+    case se: SideEffectingSheetWorkerOp[_] =>
+      ChainedOpChain(sheet, List(Merged(this), SideEffecting(se)))
+    case we: WritingSheetWorkerOp[_] => MergedOpChain(sheet, operations :+ we);
+    case wenm: WritingNoMergeSheetWorkerOp[_] =>
+      ChainedOpChain(sheet, List(Merged(this), Unmerged(wenm)))
+    case MergedOpChain(_, otherOps) => MergedOpChain(sheet, operations ++ otherOps);
     case ChainedOpChain(_, otherOps) =>
       otherOps.head match {
         case SideEffecting(_) | Unmerged(_) => ChainedOpChain(sheet, Merged(this) :: otherOps)
@@ -516,11 +554,13 @@ case class MergedOpChain(sheet: SheetWorker, operations: List[WritingSheetWorker
   }
 }
 
-case class ChainedOpChain(sheet: SheetWorker, operations: List[ChainOperation]) extends SheetWorkerOp {
+case class ChainedOpChain(sheet: SheetWorker, operations: List[ChainOperation])
+  extends SheetWorkerOp {
 
   override def inputFields: Set[FieldLike[_]] = ???; // don't use here
 
-  override def computeOutput(attrs: AttributeValues)(implicit ec: ExecutionContext): Future[UpdateDecision] = ???;
+  override def computeOutput(attrs: AttributeValues)(implicit
+      ec: ExecutionContext): Future[UpdateDecision] = ???;
 
   override def apply()(implicit ec: ExecutionContext): Future[ChainingDecision] = {
     sheet.log(s"Executing op:\n${this}");
@@ -535,15 +575,18 @@ case class ChainedOpChain(sheet: SheetWorker, operations: List[ChainOperation]) 
 
   override def ++(ops: List[SheetWorkerOp]): SheetWorkerOp = this andThen SheetWorkerOpChain(ops);
   override def andThen(op: SheetWorkerOp): SheetWorkerOp = op match {
-    case se: SideEffectingSheetWorkerOp[_]    => ChainedOpChain(sheet, operations :+ SideEffecting(se))
-    case we: WritingSheetWorkerOp[_]          => ChainedOpChain(sheet, operations :+ Merged(MergedOpChain(sheet, List(we))))
+    case se: SideEffectingSheetWorkerOp[_] => ChainedOpChain(sheet, operations :+ SideEffecting(se))
+    case we: WritingSheetWorkerOp[_] =>
+      ChainedOpChain(sheet, operations :+ Merged(MergedOpChain(sheet, List(we))))
     case wenm: WritingNoMergeSheetWorkerOp[_] => ChainedOpChain(sheet, operations :+ Unmerged(wenm))
     case moc: MergedOpChain                   => ChainedOpChain(sheet, operations :+ Merged(moc))
     case ChainedOpChain(_, otherOps) =>
       (operations.last, otherOps.head) match {
         case (Merged(moc1), Merged(moc2)) => {
           val merged = MergedOpChain(sheet, moc1.operations ++ moc2.operations);
-          ChainedOpChain(sheet, operations.take(operations.length - 1) ++ (Merged(merged) :: otherOps.tail))
+          ChainedOpChain(
+            sheet,
+            operations.take(operations.length - 1) ++ (Merged(merged) :: otherOps.tail))
         }
         case _ => ChainedOpChain(sheet, operations ++ otherOps)
       }

@@ -25,23 +25,23 @@
 package com.lkroll.roll20.sheet.stylesheet
 
 import scalatags.Text.all.{ConcreteHtmlTag, Modifier}
+import com.lkroll.roll20.core.Renderable
 
-trait Selector {
+trait Selector extends Renderable {
   import SpecialSelectors._
 
-  def render: String
-
-  def &(selector: Selector): Selector = And(this, selector);
-  def |(selector: Selector): Selector = selector match {
+  def &(selector: Selector): And = And(this, selector);
+  def |(selector: Selector): Or = selector match {
     case Or(selectors) => Or(selector :: selectors)
     case _             => Or(List(this, selector))
   }
-  def containing(selector: Selector): Selector = Under(this, selector);
-  def >(selector: Selector): Selector = DirectlyUnder(this, selector);
-  def +(selector: Selector): Selector = DirectlyAfter(this, selector);
-  def ~(selector: Selector): Selector = After(this, selector);
+  def /(selector: Selector): Under = Under(this, selector);
+  def >(selector: Selector): DirectlyUnder = DirectlyUnder(this, selector);
+  def +(selector: Selector): DirectlyAfter = DirectlyAfter(this, selector);
+  def ~(selector: Selector): After = After(this, selector);
+  def not(selector: Selector): Not = Not(this, selector);
 
-  def prefixWith(selector: Selector): Selector = selector containing this;
+  def prefixWith(selector: Selector): Selector = selector / this;
 }
 object SpecialSelectors {
   case class And(left: Selector, right: Selector) extends Selector {
@@ -49,12 +49,12 @@ object SpecialSelectors {
   }
   case class Or(selectors: List[Selector]) extends Selector {
 
-    override def |(selector: Selector): Selector = selector match {
+    override def |(selector: Selector): Or = selector match {
       case Or(rightSelectors) => Or(selectors ::: rightSelectors)
       case _                  => Or(selectors ::: List(selector))
     }
 
-    override def prefixWith(selector: Selector): Selector = Or(selectors.map(s => selector containing s));
+    override def prefixWith(selector: Selector): Selector = Or(selectors.map(s => selector / s));
 
     override def render: String = selectors.map(_.render).mkString(",\n")
   }
@@ -70,9 +70,69 @@ object SpecialSelectors {
   case class After(left: Selector, right: Selector) extends Selector {
     override def render: String = s"${left.render} ~ ${right.render}";
   }
+  case class Not(outer: Selector, inner: Selector)
+    extends Selector
+    with PseudoSelectors
+    with AttributeSelectors {
+    override def render: String = s"${outer.render}:not(${inner.render})";
+  }
 
   case class RawSelector(s: String) extends Selector {
     override def render: String = s;
+  }
+
+  case class PseudoClassSelector(main: Selector, pseudoClass: String)
+    extends Selector
+    with PseudoSelectors
+    with AttributeSelectors {
+    override def render: String = s"${main.render}:$pseudoClass";
+  }
+  case class PseudoElementSelector(main: Selector, pseudoElement: String)
+    extends Selector
+    with PseudoSelectors
+    with AttributeSelectors {
+    override def render: String = s"${main.render}::$pseudoElement";
+  }
+
+  case class HasAttributeSelector(main: Selector, attribute: String)
+    extends Selector
+    with PseudoSelectors {
+    override def render: String = s"${main.render}[$attribute]";
+  }
+  sealed trait AttributeComparator extends Renderable
+  object AttributeComparator {
+    case object Equals extends AttributeComparator {
+      override def render: String = "=";
+    }
+    case object Contains extends AttributeComparator {
+      override def render: String = "*=";
+    }
+    case object ContainsSpaceSeparated extends AttributeComparator {
+      override def render: String = "~=";
+    }
+    case object StartsWithDashSeparated extends AttributeComparator {
+      override def render: String = "|=";
+    }
+    case object StartsWith extends AttributeComparator {
+      override def render: String = "^=";
+    }
+    case object EndsWith extends AttributeComparator {
+      override def render: String = "$=";
+    }
+  }
+  case class CompareAttributeSelector(
+      main: Selector,
+      attribute: String,
+      comparator: AttributeComparator,
+      value: String)
+    extends Selector
+    with PseudoSelectors {
+    override def render: String = s"""${main.render}[$attribute${comparator.render}"$value"]"""
+  }
+
+  // Hacky way of getting `:pseudo` to render without a left-size class.
+  case object Any extends Selector with PseudoSelectors with AttributeSelectors {
+    override def render: String = s"";
   }
 
   object Roll20 {
@@ -81,7 +141,11 @@ object SpecialSelectors {
   }
 }
 
-case class ClassSelector(className: String) extends Selector with Modifier {
+case class ClassSelector(className: String)
+  extends Selector
+  with Modifier
+  with PseudoSelectors
+  with AttributeSelectors {
   import scalatags.Text.all._
   override def render: String = s".$className";
   override def applyTo(t: scalatags.text.Builder): Unit =
@@ -90,7 +154,90 @@ case class ClassSelector(className: String) extends Selector with Modifier {
 
 trait ImplicitSelectors {
   def cls(className: String): ClassSelector = ClassSelector(className);
-  implicit class TagSelector(tag: ConcreteHtmlTag[String]) extends Selector {
+  implicit class TagSelector(tag: ConcreteHtmlTag[String])
+    extends Selector
+    with PseudoSelectors
+    with AttributeSelectors {
     override def render: String = s"${tag.tag}"
+
+    // Allows to force this to convert to a Selector instance.
+    def selector: TagSelector = this;
   }
+  final val ANY = SpecialSelectors.Any;
+}
+
+trait PseudoClassSelectors { this: Selector =>
+
+  private def pseudoExtend(s: String): SpecialSelectors.PseudoClassSelector =
+    SpecialSelectors.PseudoClassSelector(this, s);
+  // https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes
+  def active = pseudoExtend("active")
+  def checked = pseudoExtend("checked")
+  def default = pseudoExtend("default")
+  def disabled = pseudoExtend("disabled")
+  def empty = pseudoExtend("empty")
+  def enabled = pseudoExtend("enabled")
+  def first = pseudoExtend("first")
+  def firstChild = pseudoExtend("first-child")
+  def firstOfType = pseudoExtend("first-of-type")
+  def fullscreen = pseudoExtend("fullscreen")
+  def focus = pseudoExtend("focus")
+  def hover = pseudoExtend("hover")
+  def indeterminate = pseudoExtend("indeterminate")
+  def inRange = pseudoExtend("in-range")
+  def invalid = pseudoExtend("invalid")
+  def lastChild = pseudoExtend("last-child")
+  def lastOfType = pseudoExtend("last-of-type")
+  def left = pseudoExtend("left")
+  def link = pseudoExtend("link")
+  def onlyChild = pseudoExtend("only-child")
+  def onlyOfType = pseudoExtend("only-of-type")
+  def optional = pseudoExtend("optional")
+  def outOfRange = pseudoExtend("out-of-range")
+  def readOnly = pseudoExtend("read-only")
+  def readWrite = pseudoExtend("read-write")
+  def required = pseudoExtend("required")
+  def right = pseudoExtend("right")
+  def root = pseudoExtend("root")
+  def scope = pseudoExtend("scope")
+  def target = pseudoExtend("target")
+  def valid = pseudoExtend("valid")
+  def visited = pseudoExtend("visited")
+}
+
+trait PseudoElementSelectors { this: Selector =>
+
+  private def pseudoExtend(s: String): SpecialSelectors.PseudoElementSelector =
+    SpecialSelectors.PseudoElementSelector(this, s);
+  // https://www.w3schools.com/css/css_pseudo_elements.asp
+  def firstLine = pseudoExtend("first-line");
+  def firstLetter = pseudoExtend("first-letter");
+  def after = pseudoExtend("after");
+  def before = pseudoExtend("before");
+  def marker = pseudoExtend("marker");
+  def selection = pseudoExtend("selection");
+}
+
+trait PseudoSelectors extends PseudoClassSelectors with PseudoElementSelectors { this: Selector => }
+
+trait AttributeSelectors { this: Selector =>
+  import SpecialSelectors.{CompareAttributeSelector, HasAttributeSelector}
+  import SpecialSelectors.AttributeComparator._
+
+  def hasAttribute(name: String): HasAttributeSelector = HasAttributeSelector(this, name);
+  def attributeEquals(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, Equals, value);
+  def attributeContains(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, Contains, value);
+
+  def attributeContainsInList(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, ContainsSpaceSeparated, value);
+
+  def attributeStartsWithDashSeparated(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, StartsWithDashSeparated, value);
+
+  def attributeStartsWith(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, StartsWith, value);
+  def attributeEndsWith(name: String, value: String): CompareAttributeSelector =
+    CompareAttributeSelector(this, name, EndsWith, value);
 }

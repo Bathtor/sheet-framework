@@ -49,7 +49,10 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3](f1: FieldLike[T1], f2: FieldLike[T2], f3: FieldLike[T3]): FieldOpsWithFields[(T1, T2, T3)] = {
+  def op[T1, T2, T3](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3]): FieldOpsWithFields[(T1, T2, T3)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -60,11 +63,11 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3, T4](f1: FieldLike[T1],
-                         f2: FieldLike[T2],
-                         f3: FieldLike[T3],
-                         f4: FieldLike[T4]
-  ): FieldOpsWithFields[(T1, T2, T3, T4)] = {
+  def op[T1, T2, T3, T4](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3],
+      f4: FieldLike[T4]): FieldOpsWithFields[(T1, T2, T3, T4)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -76,12 +79,12 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3, T4, T5](f1: FieldLike[T1],
-                             f2: FieldLike[T2],
-                             f3: FieldLike[T3],
-                             f4: FieldLike[T4],
-                             f5: FieldLike[T5]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5)] = {
+  def op[T1, T2, T3, T4, T5](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3],
+      f4: FieldLike[T4],
+      f5: FieldLike[T5]): FieldOpsWithFields[(T1, T2, T3, T4, T5)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -94,13 +97,13 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3, T4, T5, T6](f1: FieldLike[T1],
-                                 f2: FieldLike[T2],
-                                 f3: FieldLike[T3],
-                                 f4: FieldLike[T4],
-                                 f5: FieldLike[T5],
-                                 f6: FieldLike[T6]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6)] = {
+  def op[T1, T2, T3, T4, T5, T6](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3],
+      f4: FieldLike[T4],
+      f5: FieldLike[T5],
+      f6: FieldLike[T6]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -114,14 +117,14 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3, T4, T5, T6, T7](f1: FieldLike[T1],
-                                     f2: FieldLike[T2],
-                                     f3: FieldLike[T3],
-                                     f4: FieldLike[T4],
-                                     f5: FieldLike[T5],
-                                     f6: FieldLike[T6],
-                                     f7: FieldLike[T7]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7)] = {
+  def op[T1, T2, T3, T4, T5, T6, T7](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3],
+      f4: FieldLike[T4],
+      f5: FieldLike[T5],
+      f6: FieldLike[T6],
+      f7: FieldLike[T7]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -136,15 +139,15 @@ trait OpPartials {
     ctx
   }
 
-  def op[T1, T2, T3, T4, T5, T6, T7, T8](f1: FieldLike[T1],
-                                         f2: FieldLike[T2],
-                                         f3: FieldLike[T3],
-                                         f4: FieldLike[T4],
-                                         f5: FieldLike[T5],
-                                         f6: FieldLike[T6],
-                                         f7: FieldLike[T7],
-                                         f8: FieldLike[T8]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8)] = {
+  def op[T1, T2, T3, T4, T5, T6, T7, T8](
+      f1: FieldLike[T1],
+      f2: FieldLike[T2],
+      f3: FieldLike[T3],
+      f4: FieldLike[T4],
+      f5: FieldLike[T5],
+      f6: FieldLike[T6],
+      f7: FieldLike[T7],
+      f8: FieldLike[T8]): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -243,7 +246,8 @@ trait OpPartials {
         t10 <- attrs(f10);
         t11 <- attrs(f11)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11)
-    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11), mapper, sheet);
+    val ctx =
+      new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11), mapper, sheet);
     ctx
   }
 
@@ -276,7 +280,8 @@ trait OpPartials {
         t11 <- attrs(f11);
         t12 <- attrs(f12)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12)
-    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12), mapper, sheet);
+    val ctx =
+      new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12), mapper, sheet);
     ctx
   }
 
@@ -311,7 +316,10 @@ trait OpPartials {
         t12 <- attrs(f12);
         t13 <- attrs(f13)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13)
-    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13), mapper, sheet);
+    val ctx = new SheetWorkerOpPartial(
+      (f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13),
+      mapper,
+      sheet);
     ctx
   }
 
@@ -348,7 +356,10 @@ trait OpPartials {
         t13 <- attrs(f13);
         t14 <- attrs(f14)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14), mapper, sheet);
+    val ctx = new SheetWorkerOpPartial(
+      (f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14),
+      mapper,
+      sheet);
     ctx
   }
 
@@ -388,7 +399,10 @@ trait OpPartials {
         t15 <- attrs(f15)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15)
     val ctx =
-      new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15), mapper, sheet);
+      new SheetWorkerOpPartial(
+        (f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15),
+        mapper,
+        sheet);
     ctx
   }
 
@@ -430,7 +444,10 @@ trait OpPartials {
         t16 <- attrs(f16)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16)
     val ctx =
-      new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16), mapper, sheet);
+      new SheetWorkerOpPartial(
+        (f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16),
+        mapper,
+        sheet);
     ctx
   }
 
@@ -452,7 +469,8 @@ trait OpPartials {
       f15: FieldLike[T15],
       f16: FieldLike[T16],
       f17: FieldLike[T17]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17)] = {
+  ): FieldOpsWithFields[
+    (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -473,10 +491,10 @@ trait OpPartials {
         t16 <- attrs(f16);
         t17 <- attrs(f17)
       } yield (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17)
-    val ctx = new SheetWorkerOpPartial((f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17),
-                                       mapper,
-                                       sheet
-    );
+    val ctx = new SheetWorkerOpPartial(
+      (f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17),
+      mapper,
+      sheet);
     ctx
   }
 
@@ -499,7 +517,8 @@ trait OpPartials {
       f16: FieldLike[T16],
       f17: FieldLike[T17],
       f18: FieldLike[T18]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18)] = {
+  ): FieldOpsWithFields[
+    (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);
@@ -549,7 +568,8 @@ trait OpPartials {
       f17: FieldLike[T17],
       f18: FieldLike[T18],
       f19: FieldLike[T19]
-  ): FieldOpsWithFields[(T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19)] = {
+  ): FieldOpsWithFields[
+    (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19)] = {
     val mapper = (attrs: AttributeValues) =>
       for {
         t1 <- attrs(f1);

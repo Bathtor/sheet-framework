@@ -49,10 +49,12 @@ object Roll20Predef {
   //  case class Roll20Row(s: Seq[SheetElement]) extends FieldGroup {
   //    def renderer(): GroupRenderer;
   //  }
-  def roll20row(elems: SheetElement*): FieldGroup = GroupWithRenderer(DivRenderer(Seq(Roll20Style.row)), elems);
+  def roll20row(elems: SheetElement*): FieldGroup =
+    GroupWithRenderer(DivRenderer(Seq(Roll20Style.row)), elems);
   def roll202colrow(elems: SheetElement*): FieldGroup =
     GroupWithRenderer(DivRenderer(Seq(Roll20Style.`2colrow`)), elems);
   def roll203colrow(elems: SheetElement*): FieldGroup =
     GroupWithRenderer(DivRenderer(Seq(Roll20Style.`3colrow`)), elems);
-  def roll20col(elems: SheetElement*): FieldGroup = GroupWithRenderer(DivRenderer(Seq(Roll20Style.col)), elems);
+  def roll20col(elems: SheetElement*): FieldGroup =
+    GroupWithRenderer(DivRenderer(Seq(Roll20Style.col)), elems);
 }

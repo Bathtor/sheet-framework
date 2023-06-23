@@ -37,50 +37,74 @@ object SheetImplicits {
 
   private val hiddenRenderer: GroupRenderer.FieldSingleRenderer = f =>
     f match {
-      case b: Button => button(`type` := "roll", name := b.name, value := b.roll.render, display.none)
-      case _         => input(`type` := "hidden", name := f.name, value := f.initialValue)
+      case b: Button =>
+        button(`type` := "roll", name := b.name, value := b.roll.render, display.none)
+      case _ => input(`type` := "hidden", name := f.name, value := f.initialValue)
     }
 
   implicit class RenderableField(f: FieldLike[_]) {
     def like(r: GroupRenderer.FieldSingleRenderer): FieldWithRenderer = FieldWithRenderer(f, r);
-    def like(r: GroupRenderer.FieldDualRenderer): FieldWithDualRenderer = FieldWithDualRenderer(f, r);
+    def like(r: GroupRenderer.FieldDualRenderer): FieldWithDualRenderer =
+      FieldWithDualRenderer(f, r);
     def hidden: FieldWithRenderer = FieldWithRenderer(f, hiddenRenderer);
   }
   implicit class FieldSetBuilder(repeating: RepeatingSection) {
-    def apply(elems: SheetElement*): FieldSet = FieldSet(DefaultFieldSetRenderer(repeating), repeating, elems);
+    def apply(elems: SheetElement*): FieldSet =
+      FieldSet(DefaultFieldSetRenderer(repeating), repeating, elems);
   }
-  implicit def pairToLabelledElement[E](p: Tuple2[LabelsI18N, E])(implicit f: E => SheetElement): LabelledElement =
+  implicit def pairToLabelledElement[E](p: Tuple2[LabelsI18N, E])(implicit
+      f: E => SheetElement): LabelledElement =
     LabelledElement(p._1, p._2);
 
   def editOnly[E](e: E)(implicit f: E => SheetElement): EditOnlyElement = EditOnlyElement(Seq(e));
   def editOnly(elems: SheetElement*): EditOnlyElement = EditOnlyElement(elems);
-  def presOnly[E](e: E)(implicit f: E => SheetElement): PresentationOnlyElement = PresentationOnlyElement(Seq(e));
+  def presOnly[E](e: E)(implicit f: E => SheetElement): PresentationOnlyElement =
+    PresentationOnlyElement(Seq(e));
   def presOnly(elems: SheetElement*): PresentationOnlyElement = PresentationOnlyElement(elems);
-  def dualMode[E](e: E)(implicit f: E => SheetElement): DualModeElement = DualModeElement(editOnly(e), presOnly(e));
-  def dualMode[E1, E2](e1: E1, e2: E2)(implicit f1: E1 => SheetElement, f2: E2 => SheetElement): DualModeElement =
+  def dualMode[E](e: E)(implicit f: E => SheetElement): DualModeElement =
+    DualModeElement(editOnly(e), presOnly(e));
+  def dualMode[E1, E2](e1: E1, e2: E2)(implicit
+      f1: E1 => SheetElement,
+      f2: E2 => SheetElement): DualModeElement =
     DualModeElement(editOnly(e1), presOnly(e2));
-  def roll[E](roll: Button, e: E)(implicit f: E => SheetElement): RollElement = RollElement(roll, e);
-  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication, e: E)(implicit
+  def roll[E](roll: Button, e: E)(implicit f: E => SheetElement): RollElement =
+    RollElement(roll, e);
+  def roll[E](
+      ctx: RenderingContext,
+      name: String,
+      chat: ChatCommand,
+      template: TemplateApplication,
+      e: E)(implicit
       f: E => SheetElement
   ): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(chat, template)), e);
-  def roll[E](ctx: RenderingContext, name: String, chat: ChatCommand, template: TemplateApplication): Button =
+  def roll[E](
+      ctx: RenderingContext,
+      name: String,
+      chat: ChatCommand,
+      template: TemplateApplication): Button =
     Button(ctx, name, Rolls.TemplateRoll(chat, template));
-  def roll[E](ctx: RenderingContext, name: String, chatf: FieldLike[ChatCommand], template: TemplateApplication, e: E)(
-      implicit f: E => SheetElement
-  ): RollElement = RollElement(Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template)), e);
-  def roll[E](ctx: RenderingContext,
-              name: String,
-              chatf: FieldLike[ChatCommand],
-              template: TemplateApplication
-  ): Button =
+  def roll[E](
+      ctx: RenderingContext,
+      name: String,
+      chatf: FieldLike[ChatCommand],
+      template: TemplateApplication,
+      e: E)(implicit
+      f: E => SheetElement
+  ): RollElement =
+    RollElement(Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template)), e);
+  def roll[E](
+      ctx: RenderingContext,
+      name: String,
+      chatf: FieldLike[ChatCommand],
+      template: TemplateApplication): Button =
     Button(ctx, name, Rolls.TemplateRoll(Chat.FromField(chatf), template));
-  def roll[E](ctx: RenderingContext,
-              name: String,
-              cmd: String,
-              args: List[(String, Renderable)] = List.empty,
-              trailing: Option[Renderable] = None,
-              e: E
-  )(implicit f: E => SheetElement): RollElement =
+  def roll[E](
+      ctx: RenderingContext,
+      name: String,
+      cmd: String,
+      args: List[(String, Renderable)] = List.empty,
+      trailing: Option[Renderable] = None,
+      e: E)(implicit f: E => SheetElement): RollElement =
     RollElement(Button(ctx, name, Rolls.APIRoll(cmd, args, trailing)), e);
 
   implicit def seqToLabels(labels: Seq[LabelI18N]): LabelsI18N = LabelSeq(labels);
@@ -100,7 +124,7 @@ object SheetImplicits {
     override def render: String = AutocalcExprs.FieldAccess(f, false).render;
   }
   implicit def i18nRenderable(l: LabelI18N): DynamicLabel = l.dynamic;
-  //implicit def stringTemplateField(s: String): TField = TField(s);
-  //implicit def tupleToTemplateData[T1, T2](t: Tuple2[T1, T2])(implicit f1: T1 => TemplateField, f2: T2 => Renderable): (TemplateField, Renderable) = (t._1 -> t._2);
+  // implicit def stringTemplateField(s: String): TField = TField(s);
+  // implicit def tupleToTemplateData[T1, T2](t: Tuple2[T1, T2])(implicit f1: T1 => TemplateField, f2: T2 => Renderable): (TemplateField, Renderable) = (t._1 -> t._2);
 
 }

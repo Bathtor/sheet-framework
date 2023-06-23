@@ -35,7 +35,8 @@ object SubscriptionMap {
 
 class SubscriptionMap extends ListMultiMap[String, Function1[Roll20.EventInfo, Unit]] {
 
-  private val underlying = new mutable.HashMap[String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]];
+  private val underlying =
+    new mutable.HashMap[String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]];
 
   override def addOne(
       elem: (String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]])
@@ -44,9 +45,11 @@ class SubscriptionMap extends ListMultiMap[String, Function1[Roll20.EventInfo, U
     this
   };
 
-  def iterator: Iterator[(String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]])] = underlying.iterator;
+  def iterator: Iterator[(String, mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]])] =
+    underlying.iterator;
 
-  def get(key: String): Option[mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]] = underlying.get(key);
+  def get(key: String): Option[mutable.ArrayDeque[Function1[Roll20.EventInfo, Unit]]] =
+    underlying.get(key);
 
   def subtractOne(elem: String): SubscriptionMap.this.type = {
     underlying.subtractOne(elem);
