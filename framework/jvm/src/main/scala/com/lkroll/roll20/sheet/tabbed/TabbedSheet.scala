@@ -35,6 +35,7 @@ import com.lkroll.roll20.sheet.stylesheet.ColourScheme
 trait TabbedStyleColours { this: ColourScheme =>
   def textShadow: Colour
   def toggleSpanText: Colour
+  def checkedToggleSpanText: Colour
   def toggleInputText: Colour
   def editModeBackground: Colour
   def buttonWrapper: Colour
@@ -116,7 +117,8 @@ trait TabbedSheet extends Sheet {
       input(
         `type` := "checkbox",
         name := "attr_edit_mode",
-        `class` := "sheet-toggle-edit-mode sheet-hidden"),
+        TabbedStyleClasses.toggleEditMode,
+        TabbedStyleClasses.sheetHidden),
       header.render(),
       pageToggle,
       tabBar,
@@ -185,7 +187,7 @@ object TabbedI18NDefaults extends SheetI18NDefaults {
 // Keep the classes and rules separate, so we can depend on the colour schemes for the rules.
 object TabbedStyleClasses extends SheetStyleSheet {
   val edit = cls("edit");
-  val hidden = cls("hidden");
+  val sheetHidden = cls("sheet-hidden");
   val marLLg = cls("mar-l-lg");
   val modoverlay = cls("modoverlay");
   val nav = cls("nav");
@@ -231,7 +233,7 @@ case class TabbedStyleRules(
     margin.left :- 1.rem;
   }
 
-  hidden {
+  sheetHidden {
     display :- "none";
   }
 
@@ -262,6 +264,8 @@ case class TabbedStyleRules(
       light =
         s"-1px 0 ${cLight.textShadow.css}, 0 1px ${cLight.textShadow.css}, 1px 0 ${cLight.textShadow.css}, 0 -1px ${cLight.textShadow.css}"
     );
+    backgroundColor :- Transparent;
+    color :- dualMode(_.checkedToggleSpanText);
   }
 
   (input & toggleEditMode) {
@@ -376,6 +380,6 @@ object HiddenRenderer extends GroupRenderer {
   };
 
   override def fieldCombiner = { tags =>
-    div(TabbedStyleClasses.hidden, tags)
+    div(TabbedStyleClasses.sheetHidden, tags)
   };
 }

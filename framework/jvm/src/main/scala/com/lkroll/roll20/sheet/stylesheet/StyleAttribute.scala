@@ -204,7 +204,7 @@ trait StyleAttributes {
     }
     override def render: String = prefix;
   }
-  val bottom = IntStyleAttribute("bottom");
+  val bottom = SizeStyleAttribute("bottom");
   val boxShadow = attr("box-shadow");
   val boxSizing = attr("box-sizing");
 
@@ -224,7 +224,7 @@ trait StyleAttributes {
 
   val height = SizeStyleAttribute("height");
 
-  val left = IntStyleAttribute("left");
+  val left = SizeStyleAttribute("left");
   val lineHeight = SizeStyleAttribute("line-height");
 
   object margin extends PositionalAttributes[TSizeStyleAttribute] with TSizeStyleAttribute {
@@ -256,13 +256,13 @@ trait StyleAttributes {
   val position = attr("position");
 
   val resize = attr("resize");
-  val right = IntStyleAttribute("right");
+  val right = SizeStyleAttribute("right");
 
   val textAlign = attr("text-align");
   val textIndent = SizeStyleAttribute("text-indent");
   val textShadow = attr("text-shadow");
   val textTransform = attr("text-transform");
-  val top = IntStyleAttribute("top");
+  val top = SizeStyleAttribute("top");
 
   val userSelect = attr("user-select");
 
