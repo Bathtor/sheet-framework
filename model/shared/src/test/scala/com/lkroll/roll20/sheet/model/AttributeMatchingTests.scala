@@ -6,9 +6,9 @@ import org.scalatest.matchers.should.Matchers
 
 class AttributeMatchingTests extends AnyFunSuite with Matchers {
 
-  val attrs = List("repeating_testsec_-KkWmmPeaGP87vaZLpkt_testsec_testf",
-                   "repeating_testsec_-uKudbakP63yteZLerta_testsec_testf"
-  );
+  val attrs = List(
+    "repeating_testsec_-KkWmmPeaGP87vaZLpkt_testsec_testf",
+    "repeating_testsec_-uKudbakP63yteZLerta_testsec_testf");
 
   test("Field should match any repeating id") {
     val res = attrs.filter(TestSection.test.nameMatcher);
