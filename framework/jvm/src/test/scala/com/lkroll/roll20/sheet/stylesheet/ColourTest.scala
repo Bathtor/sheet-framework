@@ -23,7 +23,7 @@
  *
  */
 
-package com.lkroll.roll20.sheet
+package com.lkroll.roll20.sheet.stylesheet
 
 import org.scalatest._
 import org.scalatest.funsuite._
@@ -70,12 +70,5 @@ class ColourTest extends AnyFunSuite with Matchers {
   test("Colours are right") {
     TestPalette.primaryShade0.css shouldBe "rgb(45, 136, 45)";
     TestPalette.complementShade3.css shouldBe "rgb(128, 21, 21)";
-    val replaced = TestPalette.replaceColoursInText("""
-a {
-  background-color: ${complement-0};
-}
-""");
-    println(replaced);
-    replaced should include("rgb");
   }
 }

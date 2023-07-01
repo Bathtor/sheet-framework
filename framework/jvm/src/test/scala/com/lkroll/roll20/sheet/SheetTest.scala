@@ -29,15 +29,18 @@ import org.scalatest._
 import org.scalatest.funsuite._
 import org.scalatest.matchers.should.Matchers
 import scalatags.Text.all._
-import scalatags.stylesheet._
 import java.io.File
 import scala.io.Source
 import com.lkroll.roll20.sheet.model._
 import com.lkroll.roll20.sheet.model.SheetI18N
+import com.lkroll.roll20.sheet.stylesheet._
 
-object TestStyle extends SheetStyle {
-  initStyleSheet();
-  val x = cls(backgroundColor := "red", height := 125);
+object TestStyle extends SheetStyleSheet {
+  val x = cls("x");
+  x {
+    backgroundColor :- "red";
+    height :- 125;
+  }
 }
 
 object TestSheetModel extends SheetModel {
@@ -90,7 +93,7 @@ object TestSheet extends SimpleSheet {
 
   val skillGroup = m.skills(label(t.skillMod), m.skills.mod);
 
-  override def style: StyleSheet = TestStyle;
+  override def style: SheetStyleSheet = TestStyle;
   override def translation: SheetI18NDefaults = Testi18nDefaults;
 }
 

@@ -26,7 +26,6 @@
 package com.lkroll.roll20.sheet
 
 import scalatags.Text.all._
-import scalatags.stylesheet._
 import java.net.URL
 import com.lkroll.roll20.core._
 import com.lkroll.roll20.sheet.model._
@@ -38,18 +37,10 @@ trait Sheet extends Renderable {
 
 trait SimpleSheet extends Sheet {
   def main: FieldGroup;
-  def style: StyleSheet;
-  def externalStyles: Seq[URL] = Seq.empty;
+  def style: stylesheet.SheetStyleSheet;
   def translation: SheetI18NDefaults;
   override def render: String = main.render().render;
-  override def renderStyle(): String = {
-    val es = externalStyles.map(styleURL => {
-      val source = io.Source.fromURL(styleURL);
-      try CSSUtil.processFile(source)
-      finally source.close()
-    });
-    (es ++ Seq(style.styleSheetText)).mkString("\n");
-  }
+  override def renderStyle(): String = style.render;
   override def renderTranslation(): String = translation.render;
 
 }
