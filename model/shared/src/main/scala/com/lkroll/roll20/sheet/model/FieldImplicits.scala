@@ -27,7 +27,8 @@ package com.lkroll.roll20.sheet.model
 import com.lkroll.roll20.core._
 
 trait FieldImplicits extends CoreImplicits {
-  implicit def stringToField(s: String)(implicit ctx: RenderingContext): VoidField = VoidField(ctx, s);
+  implicit def stringToField(s: String)(implicit ctx: RenderingContext): VoidField =
+    VoidField(ctx, s);
 }
 
 object FieldImplicits extends FieldImplicits {}

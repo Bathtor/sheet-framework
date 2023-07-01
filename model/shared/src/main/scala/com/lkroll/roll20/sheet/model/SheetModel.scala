@@ -36,7 +36,8 @@ trait SheetModel extends Fields {
   def version: String;
   def outputTemplate: Option[APIOutputTemplate];
 
-  override def qualifier: Option[String] = None; // May override this to support multiple sheet models in one sheet
+  override def qualifier: Option[String] =
+    None; // May override this to support multiple sheet models in one sheet
   override def mapAccess(rowId: String, s: String): String = s;
   override def mapAccess(s: String): String = s;
   override def mapSelect(s: String): String = s;

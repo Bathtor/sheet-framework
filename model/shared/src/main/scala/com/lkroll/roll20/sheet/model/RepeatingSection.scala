@@ -34,7 +34,8 @@ trait RepeatingSection extends Fields {
     s"${RepeatingSection.prefix}${name}";
   }
   override def qualifier: Option[String] = Some(name);
-  override def mapAccess(rowId: String, s: String): String = s"${RepeatingSection.prefix}${name}_${rowId}_$s";
+  override def mapAccess(rowId: String, s: String): String =
+    s"${RepeatingSection.prefix}${name}_${rowId}_$s";
   override def mapAccess(s: String): String = s"${RepeatingSection.prefix}${name}_$s";
   override def mapSelect(s: String): String = s"${RepeatingSection.prefix}${name}:$s";
   override def mapMatcher(s: String): String => Boolean = {
@@ -62,7 +63,9 @@ object RepeatingSection {
   val prefix = "repeating_";
 }
 
-case class ReporderField(section: RepeatingSection) extends FieldLike[Array[String]] with RenderingContext {
+case class ReporderField(section: RepeatingSection)
+  extends FieldLike[Array[String]]
+  with RenderingContext {
 
   val _accessor = s"_reporder_${RepeatingSection.prefix}${section.name}";
 
@@ -91,8 +94,8 @@ case class ReporderField(section: RepeatingSection) extends FieldLike[Array[Stri
 }
 
 case class FieldAtRow[T](section: RepeatingSection, rowId: String, field: FieldLike[T])
-    extends FieldLike[T]
-    with RenderingContext {
+  extends FieldLike[T]
+  with RenderingContext {
 
   override def qualifier: Option[String] = section.qualifier;
   override def mapAccess(rowId: String, s: String): String = section.mapAccess(rowId, s);

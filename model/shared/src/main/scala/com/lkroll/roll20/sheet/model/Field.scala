@@ -50,11 +50,12 @@ sealed trait Field[T] extends FieldLike[T] {
   }
 }
 
-case class FlagField(ctx: RenderingContext,
-                     attr: String,
-                     defaultValue: Option[Boolean] = None,
-                     editable: Boolean = true
-) extends Field[Boolean] {
+case class FlagField(
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[Boolean] = None,
+    editable: Boolean = true)
+  extends Field[Boolean] {
   type F = FlagField
 
   override def reader = CoreImplicits.readableBoolean;
@@ -64,8 +65,12 @@ case class FlagField(ctx: RenderingContext,
   override def editable(b: Boolean): FlagField = FlagField(ctx, attr, defaultValue, b);
 }
 
-case class TextField(ctx: RenderingContext, attr: String, defaultValue: Option[String] = None, editable: Boolean = true)
-    extends Field[String] {
+case class TextField(
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[String] = None,
+    editable: Boolean = true)
+  extends Field[String] {
   type F = TextField
 
   override def reader = CoreImplicits.readableString;
@@ -75,16 +80,18 @@ case class TextField(ctx: RenderingContext, attr: String, defaultValue: Option[S
   override def editable(b: Boolean): TextField = TextField(ctx, attr, defaultValue, b);
 }
 
-case class EnumField(ctx: RenderingContext,
-                     attr: String,
-                     defaultValue: Option[String],
-                     options: Set[String],
-                     enumeration: Option[Enumeration],
-                     editable: Boolean = false
-) extends Field[String] {
+case class EnumField(
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[String],
+    options: Set[String],
+    enumeration: Option[Enumeration],
+    editable: Boolean = false)
+  extends Field[String] {
   type F = EnumField
 
-  override def reader = CoreImplicits.readableString; // maybe check that value is actually a member of options?
+  override def reader =
+    CoreImplicits.readableString; // maybe check that value is actually a member of options?
   override def fieldDefault: String =
     if (options.isEmpty) {
       ""
@@ -92,27 +99,35 @@ case class EnumField(ctx: RenderingContext,
       options.head
     };
 
-  override def default(s: String): EnumField = EnumField(ctx, attr, Some(s), options, enumeration, editable);
+  override def default(s: String): EnumField =
+    EnumField(ctx, attr, Some(s), options, enumeration, editable);
   def default(s: Any): EnumField =
-    EnumField(ctx,
-              attr,
-              Some(s.toString()),
-              options,
-              enumeration,
-              editable
+    EnumField(
+      ctx,
+      attr,
+      Some(s.toString()),
+      options,
+      enumeration,
+      editable
     ); // this is a bit awkward but knowing the type of an Enumeration is a bit tricky
-  override def editable(b: Boolean): EnumField = EnumField(ctx, attr, defaultValue, options, enumeration, b);
+  override def editable(b: Boolean): EnumField =
+    EnumField(ctx, attr, defaultValue, options, enumeration, b);
 }
 
-case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[Void] = None, editable: Boolean = true)
-    extends Field[Void] {
+case class VoidField(
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[Void] = None,
+    editable: Boolean = true)
+  extends Field[Void] {
 
   type F = VoidField
 
   override def reader = CoreImplicits.readableNull;
   override def fieldDefault: Void = null;
 
-  override def default(v: Void): VoidField = VoidField(ctx, attr, defaultValue, editable); // only because it's required
+  override def default(v: Void): VoidField =
+    VoidField(ctx, attr, defaultValue, editable); // only because it's required
   def default(b: Boolean): FlagField = FlagField(ctx, attr, Some(b), editable);
   def default(s: String): TextField = new TextField(ctx, attr, Some(s), editable);
   def default[N](num: N)(implicit n: Numeric[N], r: Readable[N]): NumberField[N] =
@@ -125,10 +140,12 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
   def ref[T](fref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, fref);
   def expression[T]: ExpressionField[T] = ExpressionField(ctx, attr);
   override def editable(b: Boolean): VoidField = VoidField(ctx, attr, defaultValue, b);
-  def autocalc(expr: AutocalcExpression[String])(implicit dummy: DummyImplicit): AutocalcField[String] = {
+  def autocalc(expr: AutocalcExpression[String])(implicit
+      dummy: DummyImplicit): AutocalcField[String] = {
     return new AutocalcField(TextField(ctx, this.attr), expr);
   }
-  def autocalc[T](expr: AutocalcExpression[T])(implicit n: Numeric[T], r: Readable[T]): AutocalcField[T] = {
+  def autocalc[T](
+      expr: AutocalcExpression[T])(implicit n: Numeric[T], r: Readable[T]): AutocalcField[T] = {
     return new AutocalcField(NumberField[T](ctx, this.attr, r), expr);
   }
   def button[T](roll: RollExpression[T]) = Button(ctx, attr, Rolls.SimpleRoll(roll));
@@ -137,13 +154,14 @@ case class VoidField(ctx: RenderingContext, attr: String, defaultValue: Option[V
 
 case class NumberValidity[N](min: N, max: N, step: N)
 
-case class NumberField[N: Numeric](ctx: RenderingContext,
-                                   attr: String,
-                                   reader: Readable[N],
-                                   defaultValue: Option[N] = None,
-                                   editable: Boolean = true,
-                                   valid: Option[NumberValidity[N]] = None
-) extends Field[N] {
+case class NumberField[N: Numeric](
+    ctx: RenderingContext,
+    attr: String,
+    reader: Readable[N],
+    defaultValue: Option[N] = None,
+    editable: Boolean = true,
+    valid: Option[NumberValidity[N]] = None)
+  extends Field[N] {
 
   type F = NumberField[N]
 
@@ -151,26 +169,31 @@ case class NumberField[N: Numeric](ctx: RenderingContext,
 
   override def fieldDefault: N = numericEvidence.zero;
 
-  override def default(n: N): NumberField[N] = NumberField(ctx, attr, reader, Some(n), editable, valid);
-  override def editable(b: Boolean): NumberField[N] = NumberField(ctx, attr, reader, defaultValue, b, valid);
+  override def default(n: N): NumberField[N] =
+    NumberField(ctx, attr, reader, Some(n), editable, valid);
+  override def editable(b: Boolean): NumberField[N] =
+    NumberField(ctx, attr, reader, defaultValue, b, valid);
   def validIn(min: N, max: N, step: N) =
     NumberField(ctx, attr, reader, defaultValue, editable, Some(NumberValidity(min, max, step)));
 }
 
-case class FieldRefRepeating[T](ctx: RenderingContext,
-                                attr: String,
-                                ref: FieldLike[T],
-                                defaultValue: Option[String] = None,
-                                editable: Boolean = true
-) extends Field[String] {
+case class FieldRefRepeating[T](
+    ctx: RenderingContext,
+    attr: String,
+    ref: FieldLike[T],
+    defaultValue: Option[String] = None,
+    editable: Boolean = true)
+  extends Field[String] {
 
   type F = FieldRefRepeating[T]
 
   override def fieldDefault: String = "none";
   override def reader = CoreImplicits.readableString;
 
-  override def default(s: String): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, ref, Some(s), editable);
-  override def editable(b: Boolean): FieldRefRepeating[T] = FieldRefRepeating(ctx, attr, ref, defaultValue, b);
+  override def default(s: String): FieldRefRepeating[T] =
+    FieldRefRepeating(ctx, attr, ref, Some(s), editable);
+  override def editable(b: Boolean): FieldRefRepeating[T] =
+    FieldRefRepeating(ctx, attr, ref, defaultValue, b);
 
   def valueAt(id: String): String = s"@{${ref.accessor(id)}}";
   def altExpr(implicit labelFields: LabelFields): AutocalcExpression[T] =
@@ -179,11 +202,12 @@ case class FieldRefRepeating[T](ctx: RenderingContext,
     CoreImplicits.autoToArith(this.altExpr);
 }
 
-case class FieldRef[T](ctx: RenderingContext,
-                       attr: String,
-                       defaultValue: Option[String] = None,
-                       editable: Boolean = true
-) extends Field[String] {
+case class FieldRef[T](
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[String] = None,
+    editable: Boolean = true)
+  extends Field[String] {
 
   type F = FieldRef[T]
 
@@ -202,24 +226,28 @@ case class FieldRef[T](ctx: RenderingContext,
     CoreImplicits.autoToArith(this.altExpr);
 }
 
-case class ExpressionField[T](ctx: RenderingContext,
-                              attr: String,
-                              defaultValue: Option[String] = None,
-                              editable: Boolean = true
-) extends Field[String] {
+case class ExpressionField[T](
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[String] = None,
+    editable: Boolean = true)
+  extends Field[String] {
 
   type F = ExpressionField[T]
 
   override def fieldDefault: String = "none";
   override def reader = CoreImplicits.readableString;
 
-  override def default(s: String): ExpressionField[T] = ExpressionField[T](ctx, attr, Some(s), editable);
-  def default(expr: RollExpression[T]): ExpressionField[T] = ExpressionField[T](ctx, attr, Some(expr.render), editable);
+  override def default(s: String): ExpressionField[T] =
+    ExpressionField[T](ctx, attr, Some(s), editable);
+  def default(expr: RollExpression[T]): ExpressionField[T] =
+    ExpressionField[T](ctx, attr, Some(expr.render), editable);
   def default(expr: ArithmeticExpression[T]): ExpressionField[T] =
     ExpressionField[T](ctx, attr, Some(expr.render), editable);
   def default(expr: DiceExpression): ExpressionField[Int] =
     ExpressionField[Int](ctx, attr, Some(expr.render), editable);
-  override def editable(b: Boolean): ExpressionField[T] = ExpressionField[T](ctx, attr, defaultValue, b);
+  override def editable(b: Boolean): ExpressionField[T] =
+    ExpressionField[T](ctx, attr, defaultValue, b);
 
   def valueFrom(r: Renderable): String = r.render;
   def altExpr(implicit labelFields: LabelFields): AutocalcExpression[T] =
@@ -228,11 +256,12 @@ case class ExpressionField[T](ctx: RenderingContext,
     CoreImplicits.autoToArith(this.altExpr);
 }
 
-case class ChatField(ctx: RenderingContext,
-                     attr: String,
-                     defaultValue: Option[ChatCommand] = None,
-                     editable: Boolean = true
-) extends Field[ChatCommand] {
+case class ChatField(
+    ctx: RenderingContext,
+    attr: String,
+    defaultValue: Option[ChatCommand] = None,
+    editable: Boolean = true)
+  extends Field[ChatCommand] {
 
   type F = ChatField
 
@@ -256,9 +285,11 @@ trait Fields extends RenderingContext {
 
   def flag(attr: String) = FlagField(this, attr);
   def text(attr: String) = TextField(this, attr);
-  def number[T](attr: String)(implicit n: Numeric[T], r: Readable[T]) = NumberField[T](this, attr, r);
+  def number[T](attr: String)(implicit n: Numeric[T], r: Readable[T]) =
+    NumberField[T](this, attr, r);
   def fieldRef[T](attr: String): FieldRef[T] = FieldRef(this, attr);
-  def fieldRef[T](attr: String, ref: FieldLike[T]): FieldRefRepeating[T] = FieldRefRepeating(this, attr, ref);
+  def fieldRef[T](attr: String, ref: FieldLike[T]): FieldRefRepeating[T] =
+    FieldRefRepeating(this, attr, ref);
   def field(attr: String) = VoidField(this, attr);
   def exprField[T](attr: String) = ExpressionField[T](this, attr);
   def button[T](attr: String, roll: RollExpression[T]) = Button(this, attr, Rolls.SimpleRoll(roll));
