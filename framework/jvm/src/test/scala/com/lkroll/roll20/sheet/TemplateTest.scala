@@ -71,10 +71,10 @@ class TemplateTest extends AnyFunSuite with Matchers {
   test("Roll Template Usage") {
     println("******** Roll With Template **********");
     println(
-      ExampleTemplate(ExampleTemplate.str <<= TestSheetModel.str,
-                      ExampleTemplate.test <<= "testVal",
-                      ExampleTemplate.roll <<= TestSheetModel.testRoll
-      ).render
+      ExampleTemplate(
+        ExampleTemplate.str <<= TestSheetModel.str,
+        ExampleTemplate.test <<= "testVal",
+        ExampleTemplate.roll <<= TestSheetModel.testRoll).render
     );
   }
 }

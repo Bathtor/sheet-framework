@@ -69,14 +69,14 @@ object TestWorkers extends SheetWorker {
 
 class OpTest extends AnyFunSuite with Matchers {
   test("MergedOp creation") {
-    //println(s"Testing op: ${TestWorkers.op1}");
+    // println(s"Testing op: ${TestWorkers.op1}");
     TestWorkers.op1 shouldBe a[MergedOpChain];
     val moc = TestWorkers.op1.asInstanceOf[MergedOpChain];
     moc.operations should not be empty;
   }
 
   test("ChainedOp creation") {
-    //println(s"Testing op: ${TestWorkers.op2}");
+    // println(s"Testing op: ${TestWorkers.op2}");
     TestWorkers.op2 shouldBe a[ChainedOpChain];
     val coc = TestWorkers.op2.asInstanceOf[ChainedOpChain];
     coc.operations should not be empty;
