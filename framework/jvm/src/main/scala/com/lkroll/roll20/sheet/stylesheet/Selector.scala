@@ -134,6 +134,9 @@ object SpecialSelectors {
   case object Any extends Selector with PseudoSelectors with AttributeSelectors {
     override def render: String = s"";
   }
+  case object All extends Selector {
+    override def render: String = s"*";
+  }
 
   object Roll20 {
     final val CHARSHEET = RawSelector(".charsheet");
@@ -164,6 +167,7 @@ trait ImplicitSelectors {
     def selector: TagSelector = this;
   }
   final val ANY = SpecialSelectors.Any;
+  final val ALL = SpecialSelectors.All;
 }
 
 trait PseudoClassSelectors { this: Selector =>
@@ -203,6 +207,8 @@ trait PseudoClassSelectors { this: Selector =>
   def target = pseudoExtend("target")
   def valid = pseudoExtend("valid")
   def visited = pseudoExtend("visited")
+
+  def nthChild(selector: String) = pseudoExtend(s"nth-child($selector)")
 }
 
 trait PseudoElementSelectors { this: Selector =>
