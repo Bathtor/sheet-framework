@@ -27,14 +27,15 @@ package com.lkroll.roll20.sheet.stylesheet
 import scalatags.Text.tags._
 
 import com.lkroll.roll20.core.Renderable
+import com.lkroll.roll20.sheet.RollTemplate
 
 case class EmbeddedCss(cssText: String)
 
 class StyleContext(val selector: Selector) {
 
-  private var styles: List[(StyleAttribute, StyleValue)] = Nil;
-  private var darkStyles: List[(StyleAttribute, StyleValue)] = Nil;
-  private var lightStyles: List[(StyleAttribute, StyleValue)] = Nil;
+  protected var styles: List[(StyleAttribute, StyleValue)] = Nil;
+  protected var darkStyles: List[(StyleAttribute, StyleValue)] = Nil;
+  protected var lightStyles: List[(StyleAttribute, StyleValue)] = Nil;
 
   def addStyle(attr: StyleAttribute, value: StyleValue): Unit = {
     styles ::= attr -> value;
@@ -67,6 +68,41 @@ class StyleContext(val selector: Selector) {
   }
 }
 
+class TemplateStyleContext(val template: RollTemplate, _selector: Selector)
+  extends StyleContext(_selector) {
+  require(selector != null)
+
+  override def result(): List[Style] = {
+    import SpecialSelectors.Roll20._
+    assertStylesBeginWithSheet()
+    val templateSelector = rollTemplateSelector(template);
+    // reverse all the styles so they override eachother in the expected order.
+    val dark = if (darkStyles.isEmpty) {
+      Nil
+    } else {
+      List(Style(selector.prefixWith(TEMPLATE_DARK_MODE & templateSelector), darkStyles.reverse))
+    };
+    val light = if (lightStyles.isEmpty) {
+      Nil
+    } else {
+      List(Style(selector.prefixWith(templateSelector), lightStyles.reverse))
+    };
+    val others = Style(selector.prefixWith(templateSelector), styles.reverse) :: Nil
+    // dark style needs to come last to override the others.
+    others ++ light ++ dark
+  }
+
+  private def assertStylesBeginWithSheet(): Unit = {
+    assert(
+      selector.forall {
+        case ClassSelector(name) => name.startsWith("sheet-")
+        case _                   => true
+      },
+      s"Template CSS classes must still begin with 'sheet-', but one of the classes in '${selector.render}' violated this rule."
+    )
+  }
+}
+
 case class Style(selector: Selector, styles: List[(StyleAttribute, StyleValue)])
   extends Renderable {
   override def render: String = render(nestingDepth = 0);
@@ -95,6 +131,18 @@ trait SheetStyleSheet
 
   private var styles: List[Style] = Nil;
   protected var embeddings: List[EmbeddedCss] = Nil;
+
+  private var activeRollTemplate: Option[RollTemplate] = None;
+  implicit class RollTemplateSelector(template: RollTemplate) {
+    def apply(thunk: => Unit): Unit = {
+      require(activeRollTemplate.isEmpty, "Nested templates are not supported")
+      require(context.isEmpty, "Roll templates may not be nested inside a style block.")
+      activeRollTemplate = Some(template);
+      thunk;
+      activeRollTemplate = None
+    }
+  }
+
   private var context: Option[StyleContext] = None;
   implicit protected def currentContext: StyleContext = {
     assert(context.nonEmpty, "Assigning values to attribues is only legal within a style block.");
@@ -103,7 +151,10 @@ trait SheetStyleSheet
   implicit class StyleSelector(selector: Selector) {
     def apply(thunk: => Unit): Unit = {
       require(context.isEmpty, "Nested rules are not supported");
-      context = Some(new StyleContext(selector));
+      context = activeRollTemplate match {
+        case Some(template) => Some(new TemplateStyleContext(template, selector))
+        case None           => Some(new StyleContext(selector))
+      }
       thunk;
       styles ++= context.get.result();
       context = None;
@@ -123,6 +174,11 @@ trait SheetStyleSheet
 }
 
 // TODO: Remove me.
+// object TestTemplate extends RollTemplate {
+//   import scalatags.Text.all._
+//   override val name: String = "testytmplt"
+//   override def content: Tag = div("go away");
+// }
 // object TestStyleSheet extends SheetStyleSheet {
 //   val custom = cls("custom");
 //   val anotherOne = cls("another-one");
@@ -130,20 +186,32 @@ trait SheetStyleSheet
 //   val testy2 = div / custom;
 //   val testy3 = (div & custom ~ span) | (custom > div + span) | testy;
 
-//   testy3 {
-//     color :- dualMode(dark = "#AA0000", light = "#330000");
-//     color :- dualMode(dark = 0xaa0000, light = 0x330000);
-//     border :- "1px solid";
-//     border.left :- "1px solid";
-//     border.left.color :- 0xff0000;
+//   // testy3 {
+//   //   color :- dualMode(dark = "#AA0000", light = "#330000");
+//   //   color :- dualMode(dark = 0xaa0000, light = 0x330000);
+//   //   border :- "1px solid";
+//   //   border.left :- "1px solid";
+//   //   border.left.color :- 0xff0000;
 
-//     margin.left :- 2.px;
-//     margin.right :- 2.px;
-//     margin.top :- 2.px;
-//   }
+//   //   margin.left :- 2.px;
+//   //   margin.right :- 2.px;
+//   //   margin.top :- 2.px;
+//   // }
 
 //   p.selector {
 //     textTransform :- "uppercase";
 //     color :- dualMode(dark = "#AA0000", light = "#330000");
+//   }
+
+//   val templateTesty = cls("sheet-testy");
+//   TestTemplate {
+//     (templateTesty / div) {
+//       color :- dualMode(dark = "#AA0000", light = "#330000");
+//       border :- "1px solid";
+//     }
+//     p.selector {
+//       textTransform :- "uppercase";
+//       color :- dualMode(dark = "#AA0000", light = "#330000");
+//     }
 //   }
 // }

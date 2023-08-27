@@ -221,6 +221,7 @@ trait StyleAttributes {
   val fontFamily = attr("font-family");
   val fontSize = SizeStyleAttribute("font-size");
   val fontVariant = attr("font-variant");
+  val fontStyle = attr("font-style");
   val fontWeight = IntStyleAttribute("font-weight");
 
   val height = SizeStyleAttribute("height");

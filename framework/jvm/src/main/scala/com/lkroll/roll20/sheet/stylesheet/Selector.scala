@@ -26,6 +26,7 @@ package com.lkroll.roll20.sheet.stylesheet
 
 import scalatags.Text.all.{ConcreteHtmlTag, Modifier}
 import com.lkroll.roll20.core.Renderable
+import com.lkroll.roll20.sheet.RollTemplate
 
 trait Selector extends Renderable {
   import SpecialSelectors._
@@ -42,9 +43,20 @@ trait Selector extends Renderable {
   def not(selector: Selector): Not = Not(this, selector);
 
   def prefixWith(selector: Selector): Selector = selector / this;
+
+  def forall(cond: Selector => Boolean): Boolean;
 }
 object SpecialSelectors {
-  case class And(left: Selector, right: Selector) extends Selector {
+
+  trait BinarySelectory extends Selector {
+    def left: Selector
+    def right: Selector
+
+    override def forall(cond: Selector => Boolean): Boolean =
+      cond(this) && cond(left) && cond(right);
+  }
+
+  case class And(left: Selector, right: Selector) extends BinarySelectory {
     override def render: String = s"${left.render}${right.render}";
   }
   case class Or(selectors: List[Selector]) extends Selector {
@@ -56,18 +68,21 @@ object SpecialSelectors {
 
     override def prefixWith(selector: Selector): Selector = Or(selectors.map(s => selector / s));
 
-    override def render: String = selectors.map(_.render).mkString(",\n")
+    override def render: String = selectors.map(_.render).mkString(",\n");
+
+    override def forall(cond: Selector => Boolean): Boolean =
+      cond(this) && selectors.forall(cond);
   }
-  case class Under(left: Selector, right: Selector) extends Selector {
+  case class Under(left: Selector, right: Selector) extends BinarySelectory {
     override def render: String = s"${left.render} ${right.render}";
   }
-  case class DirectlyUnder(left: Selector, right: Selector) extends Selector {
+  case class DirectlyUnder(left: Selector, right: Selector) extends BinarySelectory {
     override def render: String = s"${left.render} > ${right.render}";
   }
-  case class DirectlyAfter(left: Selector, right: Selector) extends Selector {
+  case class DirectlyAfter(left: Selector, right: Selector) extends BinarySelectory {
     override def render: String = s"${left.render} + ${right.render}";
   }
-  case class After(left: Selector, right: Selector) extends Selector {
+  case class After(left: Selector, right: Selector) extends BinarySelectory {
     override def render: String = s"${left.render} ~ ${right.render}";
   }
   case class Not(outer: Selector, inner: Selector)
@@ -75,10 +90,15 @@ object SpecialSelectors {
     with PseudoSelectors
     with AttributeSelectors {
     override def render: String = s"${outer.render}:not(${inner.render})";
+
+    override def forall(cond: Selector => Boolean): Boolean =
+      cond(this) && cond(outer) && cond(inner);
   }
 
   case class RawSelector(s: String) extends Selector {
     override def render: String = s;
+
+    override def forall(cond: Selector => Boolean): Boolean = cond(this);
   }
 
   case class PseudoClassSelector(main: Selector, pseudoClass: String)
@@ -86,18 +106,24 @@ object SpecialSelectors {
     with PseudoSelectors
     with AttributeSelectors {
     override def render: String = s"${main.render}:$pseudoClass";
+
+    override def forall(cond: Selector => Boolean): Boolean = cond(this) && cond(main);
   }
   case class PseudoElementSelector(main: Selector, pseudoElement: String)
     extends Selector
     with PseudoSelectors
     with AttributeSelectors {
     override def render: String = s"${main.render}::$pseudoElement";
+
+    override def forall(cond: Selector => Boolean): Boolean = cond(this) && cond(main);
   }
 
   case class HasAttributeSelector(main: Selector, attribute: String)
     extends Selector
     with PseudoSelectors {
     override def render: String = s"${main.render}[$attribute]";
+
+    override def forall(cond: Selector => Boolean): Boolean = cond(this) && cond(main);
   }
   sealed trait AttributeComparator extends Renderable
   object AttributeComparator {
@@ -127,20 +153,27 @@ object SpecialSelectors {
       value: String)
     extends Selector
     with PseudoSelectors {
-    override def render: String = s"""${main.render}[$attribute${comparator.render}"$value"]"""
+    override def render: String = s"""${main.render}[$attribute${comparator.render}"$value"]""";
+
+    override def forall(cond: Selector => Boolean): Boolean = cond(this) && cond(main);
   }
 
   // Hacky way of getting `:pseudo` to render without a left-size class.
   case object Any extends Selector with PseudoSelectors with AttributeSelectors {
     override def render: String = s"";
+    override def forall(cond: Selector => Boolean): Boolean = cond(this);
   }
   case object All extends Selector {
     override def render: String = s"*";
+    override def forall(cond: Selector => Boolean): Boolean = cond(this);
   }
 
   object Roll20 {
     final val CHARSHEET = RawSelector(".charsheet");
     final val DARK_MODE = RawSelector("body.sheet-darkmode");
+    final val TEMPLATE_DARK_MODE = RawSelector(".sheet-rolltemplate-darkmode");
+    def rollTemplateSelector(template: RollTemplate): Selector = RawSelector(
+      s".sheet-rolltemplate-${template.name}");
   }
 }
 
@@ -153,6 +186,8 @@ case class ClassSelector(className: String)
   override def render: String = s".$className";
   override def applyTo(t: scalatags.text.Builder): Unit =
     t.appendAttr("class", scalatags.text.Builder.GenericAttrValueSource(className));
+
+  override def forall(cond: Selector => Boolean): Boolean = cond(this);
 }
 
 trait ImplicitSelectors {
@@ -161,7 +196,8 @@ trait ImplicitSelectors {
     extends Selector
     with PseudoSelectors
     with AttributeSelectors {
-    override def render: String = s"${tag.tag}"
+    override def render: String = s"${tag.tag}";
+    override def forall(cond: Selector => Boolean): Boolean = cond(this);
 
     // Allows to force this to convert to a Selector instance.
     def selector: TagSelector = this;
