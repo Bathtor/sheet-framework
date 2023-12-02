@@ -193,6 +193,7 @@ trait StyleAttributes {
     lazy val radius = SizeStyleAttribute(s"${prefix}-radius");
     lazy val style = attr(s"${prefix}-style");
     lazy val width = SizeStyleAttribute(s"${prefix}-width");
+    lazy val collapse = attr(s"${prefix}-collapse");
   }
   object border
     extends PositionalAttributes[BorderAttributes]
