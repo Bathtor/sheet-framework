@@ -14,12 +14,15 @@ ThisBuild / licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
 ThisBuild / homepage := Some(url("https://github.com/Bathtor/sheet-framework"))
 ThisBuild / scmInfo := Some(
-                ScmInfo(url("https://github.com/Bathtor/sheet-framework"),
-                            "git@github.com:Bathtor/sheet-framework.git"))
-ThisBuild / developers := List(Developer(id = "lkroll",
-                             name = "Lars Kroll",
-                             email = "bathtor@googlemail.com",
-                             url = url("https://github.com/Bathtor")))
+  ScmInfo(
+    url("https://github.com/Bathtor/sheet-framework"),
+    "git@github.com:Bathtor/sheet-framework.git"))
+ThisBuild / developers := List(
+  Developer(
+    id = "lkroll",
+    name = "Lars Kroll",
+    email = "bathtor@googlemail.com",
+    url = url("https://github.com/Bathtor")))
 publishMavenStyle := true
 
 // Add sonatype repository settings
@@ -27,43 +30,44 @@ sonatypeCredentialHost := "s01.oss.sonatype.org"
 sonatypeRepository := "https://s01.oss.sonatype.org/service/local"
 ThisBuild / publishTo := sonatypePublishToBundle.value
 
-ThisBuild / resolvers += Resolver.sonatypeRepo("releases")
+ThisBuild / resolvers ++= Resolver.sonatypeOssRepos("releases")
 
+lazy val root = project
+  .in(file("."))
+  .aggregate(sheetframeworkJS, sheetframeworkJVM)
+  .settings(publish / skip := true)
 
-lazy val root = project.in(file(".")).
-  aggregate(sheetframeworkJS, sheetframeworkJVM).
-  settings(publish / skip := true)
-
-lazy val sheetframework = crossProject(JSPlatform, JVMPlatform).in(file(".")).
-  enablePlugins(BuildInfoPlugin).
-  settings(
+lazy val sheetframework = crossProject(JSPlatform, JVMPlatform)
+  .in(file("."))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
     name := "Roll20 Sheet Framework",
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.12.0",
-    libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.3",
+    libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.5-SNAPSHOT",
     libraryDependencies += "com.lkroll" %%% "roll20-sheet-model" % version.value,
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.16" % "test",
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.16" % "test",
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "com.lkroll.roll20.sheet",
     scalacOptions ++= Seq(
-      "-deprecation", 
-      "-feature", 
+      "-deprecation",
+      "-feature",
       "-language:implicitConversions",
       "-Xfatal-warnings")
-  ).
-  jvmSettings(
+  )
+  .jvmSettings(
     // Add JVM-specific settings here
-    //libraryDependencies += "org.scala-js" %% "scalajs-stubs" % scalaJSVersion % "provided",
-    //libraryDependencies += "org.scalactic" %% "scalactic" % "3.+",
+    // libraryDependencies += "org.scala-js" %% "scalajs-stubs" % scalaJSVersion % "provided",
+    // libraryDependencies += "org.scalactic" %% "scalactic" % "3.+",
     libraryDependencies += "org.rogach" %% "scallop" % "4.1.0",
     libraryDependencies += "com.lihaoyi" %% "upickle" % "3.1.0",
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
     libraryDependencies += "org.codehaus.jettison" % "jettison" % "1.5.4",
     libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    parallelExecution in Test := false,
-    logBuffered in Test := false
-  ).
-  jsSettings(
+    Test / parallelExecution := false,
+    Test / logBuffered := false
+  )
+  .jsSettings(
     // Add JS-specific settings here
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "2.6.0",
     libraryDependencies += "com.lkroll" %%% "roll20-sheet-facade" % "1.0.2" % "provided"

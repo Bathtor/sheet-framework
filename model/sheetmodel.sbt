@@ -7,8 +7,8 @@ ThisBuild / organization := "com.lkroll"
 
 ThisBuild / version := "0.12.0-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.7"
-ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.7")
+ThisBuild / scalaVersion := "2.13.10"
+ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.10")
 
 ThisBuild / licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
 
@@ -34,7 +34,7 @@ lazy val root = project.in(file(".")).
 lazy val sheetModel = crossProject(JSPlatform, JVMPlatform).in(file(".")).
   settings(
     name := "Roll20 Sheet Model",
-    libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.3",
+    libraryDependencies += "com.lkroll" %%% "roll20-core" % "0.13.5-SNAPSHOT",
     libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.10" % "test",
     scalacOptions ++= Seq(
       "-deprecation", 
